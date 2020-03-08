@@ -8,4 +8,6 @@ set (CMAKE_CXX_FLAGS "-Wall -Wunused")
 
 file (GLOB SOURCES "src/*.cpp")
 
+add_executable (unit-test-runner test/test.cpp)
+
 add_executable (http-server ${SOURCES})
