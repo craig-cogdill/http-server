@@ -49,10 +49,10 @@ std::vector<std::string> HttpRequest::Explode(std::string& s, char delim) {
 // This is being done purposefully, as parsing the raw request character by
 //   character is something that should only be done once. It is a special
 //   case of parsing this field that should you get two consecutive CRLF, everything
-//   left to parse is the data field.
+//   left to parse is the data field in its entirety.
 //
-// To take advantage of this special case while the data is already being parsed,
-//   the SRP will be violated.
+// The SRP is violated to take advantage of this special case while the data is
+//   already being parsed.
 bool HttpRequest::GetLinesOfRawRequestAndCacheData(const char* rawRequest) {
     int charsSinceLastCR(0);
     int startNewWordAt(0);
