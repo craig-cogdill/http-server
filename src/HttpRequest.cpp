@@ -17,6 +17,10 @@ bool HttpRequest::IsValid() {
     return mValid;
 }    
     
+int HttpRequest::GetBadRequestReturnCode() {
+    return kBadRequestReturnValue;
+}
+    
 std::vector<std::string> HttpRequest::Explode(std::string& s, char delim) {
     std::vector<std::string> result;
     std::istringstream iss(s);
@@ -32,6 +36,20 @@ bool HttpRequest::Parse(std::string rawRequest) {
     std::vector<std::string> requestLines = Explode(rawRequest, '\n');
     if (requestLines.empty()) {
         return false;
+    }
+    // Process the first line of the request
+    bool firstLineSuccess = ParseFirstLine(requestLines.at(0));
+    if (!firstLineSuccess) {
+        return false;
+    }
+    size_t emptyStrIdx = GetRequestEmptyLineIndex(requestLines);
+
+
+    // Only the first line of the request is present
+    if (emptyStrIdx == 1) {
+        return ParseFirstLine(requestLines.at(0));
+    } else {
+
     }
     return ParseFirstLine(requestLines.at(0));
 }
@@ -81,6 +99,27 @@ bool HttpRequest::ParseHeaders(std::vector<std::string> headers) {
             mContentLength = headerVal;
         }
     }
-    
     return true;
+}
+    
+size_t HttpRequest::GetRequestEmptyLineIndex(std::vector<std::string> requestLines) {
+    return std::distance(requestLines.begin(), std::find(requestLines.begin(), requestLines.end(), ""));
+}
+    
+bool HttpRequest::RequestHasDataErrors(std::vector<std::string> requestLines, const size_t& emptyStringIdx) {
+    size_t requestLinesSize = requestLines.size();
+    if ("GET" == mVerb && emptyStringIdx != requestLinesSize) {
+    // A GET request can have headers, but no data
+        kBadRequestReturnValue = 400;
+        return true;
+    } else if ("DELETE" == mVerb && emptyStringIdx > 1) {
+    // A DELETE request can have no additional headers or data
+        kBadRequestReturnValue = 400;
+        return true;
+    } else if ("POST" == mVerb && emptyStringIdx == requestLinesSize) {
+    // A POST request must have data
+        kBadRequestReturnValue = 400;
+        return true;
+    }
+    return false;
 }

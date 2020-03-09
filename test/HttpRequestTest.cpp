@@ -78,10 +78,9 @@ TEST_F(HttpRequestTest, Explode_SemiColonAsDelimiter) {
 }
 
 TEST_F(HttpRequestTest, ParseFirstLine_EmptyRequest) {
-    std::string emptyRequest{""};
-    
-    HttpRequest httpRequest(emptyRequest);
-    EXPECT_FALSE(httpRequest.ParseFirstLine(emptyRequest));
+    HttpRequest httpRequest(mEmptyRequest);
+    EXPECT_FALSE(httpRequest.ParseFirstLine(mEmptyRequest));
+    EXPECT_EQ(400, httpRequest.GetBadRequestReturnCode());
 }
 
 TEST_F(HttpRequestTest, ParseFirstLine_NotEnoughFirstLineArgs_1) {
@@ -89,6 +88,7 @@ TEST_F(HttpRequestTest, ParseFirstLine_NotEnoughFirstLineArgs_1) {
     
     HttpRequest httpRequest(request);
     EXPECT_FALSE(httpRequest.ParseFirstLine(request));
+    EXPECT_EQ(400, httpRequest.GetBadRequestReturnCode());
 }
 
 TEST_F(HttpRequestTest, ParseFirstLine_NotEnoughFirstLineArgs_2) {
@@ -96,6 +96,7 @@ TEST_F(HttpRequestTest, ParseFirstLine_NotEnoughFirstLineArgs_2) {
     
     HttpRequest httpRequest(request);
     EXPECT_FALSE(httpRequest.ParseFirstLine(request));
+    EXPECT_EQ(400, httpRequest.GetBadRequestReturnCode());
 }
 
 TEST_F(HttpRequestTest, ParseFirstLine_BadVerb1) {
@@ -103,6 +104,7 @@ TEST_F(HttpRequestTest, ParseFirstLine_BadVerb1) {
     
     HttpRequest httpRequest(request);
     EXPECT_FALSE(httpRequest.ParseFirstLine(request));
+    EXPECT_EQ(405, httpRequest.GetBadRequestReturnCode());
 }
 
 TEST_F(HttpRequestTest, ParseFirstLine_BadVerb2) {
@@ -110,13 +112,15 @@ TEST_F(HttpRequestTest, ParseFirstLine_BadVerb2) {
     
     HttpRequest httpRequest(request);
     EXPECT_FALSE(httpRequest.ParseFirstLine(request));
+    EXPECT_EQ(405, httpRequest.GetBadRequestReturnCode());
 }
 
 TEST_F(HttpRequestTest, ParseFirstLine_BadHttpVersion) {
-    std::string request{"HEAD /fake/uri HTTP/10.11"};
+    std::string request{"GET /fake/uri HTTP/10.11"};
     
     HttpRequest httpRequest(request);
     EXPECT_FALSE(httpRequest.ParseFirstLine(request));
+    EXPECT_EQ(400, httpRequest.GetBadRequestReturnCode());
 }
 
 TEST_F(HttpRequestTest, ParseFirstLine_Valid_GET) {
@@ -152,6 +156,7 @@ TEST_F(HttpRequestTest, ParseHeaders_MalformedHeader) {
     
     HttpRequest httpRequest(mEmptyRequest);
     EXPECT_FALSE(httpRequest.ParseHeaders({malformedHeader1}));
+    EXPECT_EQ(400, httpRequest.GetBadRequestReturnCode());
 }
 
 TEST_F(HttpRequestTest, ParseHeaders_ContentType) {
@@ -164,6 +169,44 @@ TEST_F(HttpRequestTest, ParseHeaders_ContentType) {
     EXPECT_EQ(contentType, httpRequest.mContentType);
 }
 
+TEST_F(HttpRequestTest, ParseHeaders_ContentLength) {
+    std::string contentLength{"8"};
+    std::string header1{"Content-Length: "+contentLength};
+    
+    HttpRequest httpRequest(mEmptyRequest);
+    EXPECT_TRUE(httpRequest.ParseHeaders({header1}));
+
+    EXPECT_EQ(contentLength, httpRequest.mContentLength);
+}
+
+TEST_F(HttpRequestTest, ParseHeaders_BothHeadersPresent) {
+    std::string contentLength{"8"};
+    std::string header1{"Content-Length: "+contentLength};
+    std::string contentType{"application/json"};
+    std::string header2{"Content-Type: "+contentType};
+    
+    HttpRequest httpRequest(mEmptyRequest);
+    EXPECT_TRUE(httpRequest.ParseHeaders({header1, header2}));
+
+    EXPECT_EQ(contentLength, httpRequest.mContentLength);
+    EXPECT_EQ(contentType, httpRequest.mContentType);
+}
+
+TEST_F(HttpRequestTest, ParseHeaders_OtherHeadersIgnored) {
+    std::string contentLength{"8"};
+    std::string header1{"Content-Length: "+contentLength};
+    std::string contentType{"application/json"};
+    std::string header2{"Content-Type: "+contentType};
+    std::string ignoredValue{"myVal"};
+    std::string header3{"Ignore-Me: "+ignoredValue};
+    
+    HttpRequest httpRequest(mEmptyRequest);
+    EXPECT_TRUE(httpRequest.ParseHeaders({header1, header2}));
+
+    EXPECT_EQ(contentLength, httpRequest.mContentLength);
+    EXPECT_EQ(contentType, httpRequest.mContentType);
+}
+
 
 
 
@@ -171,10 +214,8 @@ TEST_F(HttpRequestTest, ParseHeaders_ContentType) {
 
 
 TEST_F(HttpRequestTest, Parse_EmtpyRequest) {
-    std::string emptyRequest{""};
-    
-    HttpRequest httpRequest(emptyRequest);
-    EXPECT_FALSE(httpRequest.Parse(emptyRequest));
+    HttpRequest httpRequest(mEmptyRequest);
+    EXPECT_FALSE(httpRequest.Parse(mEmptyRequest));
 }
 
 TEST_F(HttpRequestTest, Parse_BadVerb) {
@@ -196,4 +237,52 @@ TEST_F(HttpRequestTest, Parse_Valid) {
     
     HttpRequest httpRequest(request);
     EXPECT_TRUE(httpRequest.Parse(request));
+}
+
+TEST_F(HttpRequestTest, GetRequestEmtpyLineIndex_1) {
+    std::vector<std::string> headerVec{"GET /fake/uri HTTP/1.1",
+                                       "Content-Type: type",
+                                       ""};
+    size_t expectedPosition{2}; 
+
+    HttpRequest httpRequest(mEmptyRequest);
+    EXPECT_EQ(expectedPosition, httpRequest.GetRequestEmptyLineIndex(headerVec));
+}
+
+TEST_F(HttpRequestTest, GetRequestEmtpyLineIndex_2) {
+    std::vector<std::string> headerVec{"GET /fake/uri HTTP/1.1",
+                                       ""};
+    size_t expectedPosition{1};
+
+    HttpRequest httpRequest(mEmptyRequest);
+    EXPECT_EQ(expectedPosition, httpRequest.GetRequestEmptyLineIndex(headerVec));
+}
+
+TEST_F(HttpRequestTest, GetRequestEmtpyLineIndex_3) {
+    std::vector<std::string> headerVec{"GET /fake/uri HTTP/1.1",
+                                       "",
+                                       "HereIsSomeMockData"};
+    size_t expectedPosition{1};
+
+    HttpRequest httpRequest(mEmptyRequest);
+    EXPECT_EQ(expectedPosition, httpRequest.GetRequestEmptyLineIndex(headerVec));
+}
+
+TEST_F(HttpRequestTest, GetRequestEmtpyLineIndex_4) {
+    std::vector<std::string> headerVec{"",
+                                       "HereIsSomeMockData"};
+    size_t expectedPosition{0};
+
+    HttpRequest httpRequest(mEmptyRequest);
+    EXPECT_EQ(expectedPosition, httpRequest.GetRequestEmptyLineIndex(headerVec));
+}
+
+TEST_F(HttpRequestTest, GetRequestEmtpyLineIndex_5) {
+    std::vector<std::string> headerVec{"",
+                                       "",
+                                       "HereIsSomeMockData"};
+    size_t expectedPosition{0};
+
+    HttpRequest httpRequest(mEmptyRequest);
+    EXPECT_EQ(expectedPosition, httpRequest.GetRequestEmptyLineIndex(headerVec));
 }

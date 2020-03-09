@@ -11,6 +11,9 @@ public:
     bool Parse(std::string rawRequest);
     bool ParseFirstLine(std::string firstLine);
     bool ParseHeaders(std::vector<std::string> headers);
+    int GetBadRequestReturnCode();
+    size_t GetRequestEmptyLineIndex(std::vector<std::string> requestLines);
+    bool RequestHasDataErrors(std::vector<std::string> requestLines, const size_t& emptyStringIdx);
     std::vector<std::string> Explode(std::string& s, char delim);
 
     std::string mVerb;
