@@ -13,26 +13,36 @@ public:
        return std::unique_ptr<MockHttpServer>(new MockHttpServer);
     }
     MockHttpServer() : HttpServer() {}
-    virtual ~MockHttpServer() = default;
+    virtual ~MockHttpServer() {}
 
-    bool InitializeSocket() {
+    bool InitializeSocket() override {
         return HttpServer::InitializeSocket();
     }
-    int Socket(int domain, int type, int protocol) {
-        return 1;
+
+    int Socket(int domain, int type, int protocol) override {
+        return mSocketRetVal;
     }
     
-    int Bind(int sockfd, const struct sockaddr* addr, socklen_t addrlen) {
-        return 0;
+    int Bind(int sockfd, const struct sockaddr* addr, socklen_t addrlen) override {
+        return mBindRetVal;
     }
     
-    int Listen(int sockfd, int backlog) {
-        return 0;
+    int Listen(int sockfd, int backlog) override {
+        return mListenRetVal;
     }
     
-    int Fcntl(int fd, int cmd, int val) {
-        return 0;
+    int Fcntl(int fd, int cmd, int val) override {
+        return mFcntlRetVal;
     }
-protected:
-private:
+
+    // Return variables for targeting mocking of system calls
+    //    All variables defaulted to 'happy path' return values
+    //
+    // NOTE: For the socket() return val, a negative integer is passed,
+    //       as passing a positive integer back in the mock will cause
+    //       an errant call to close() in the destructor
+    int mSocketRetVal{-1};
+    int mBindRetVal{0};
+    int mListenRetVal{0};
+    int mFcntlRetVal{0};
 };

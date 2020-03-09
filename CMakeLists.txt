@@ -44,6 +44,7 @@ if (CMAKE_VERSION VERSION_LESS 2.8.11)
 endif()
 
 # Now simply link against gtest or gtest_main as needed. Eg
+include_directories (${gtest_SOURCE_DIR}/include)
 file (GLOB TEST_FILES ${TEST_DIR}/*.cpp ${SRC_FILES}/*.h ${SRC_FILES}/HttpServer.cpp)
 add_executable(unit-test-runner test/main.cpp ${TEST_FILES})
 target_link_libraries(unit-test-runner gtest_main)

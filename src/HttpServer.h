@@ -3,11 +3,12 @@
 #include <memory>
 #include <unistd.h>
 #include <netinet/in.h>
+#include <iostream>
 
 class HttpServer {
 public:
     static std::unique_ptr<HttpServer> Create();
-    virtual ~HttpServer() { close(mSocketFd); }
+    virtual ~HttpServer();
 
     std::string ReadFromSocket();
 

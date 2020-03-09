@@ -15,6 +15,12 @@ std::unique_ptr<HttpServer> HttpServer::Create() {
     return httpServerPtr;
 }
 
+HttpServer::~HttpServer() { 
+    if (mSocketFd > 0) {
+        close(mSocketFd);
+    }
+}
+
 bool HttpServer::InitializeSocket() {
     if ((mSocketFd = Socket(AF_INET, SOCK_STREAM, 0)) == 0) {
         std::cerr << "Failed to initialize socket" << std::endl;
@@ -35,7 +41,10 @@ bool HttpServer::InitializeSocket() {
         return false;
     }
     // Set the socket to non-binding mode
-    Fcntl(mSocketFd, F_SETFL, O_NONBLOCK);
+    if (Fcntl(mSocketFd, F_SETFL, O_NONBLOCK) < 0) {
+        std::cerr << "Failed to set socket non-binding" << std::endl;
+        return false;
+    }
     return true;
 }
 
