@@ -2,20 +2,30 @@
 #include <sstream>
 #include <algorithm>
 #include <iostream>
+#include <stdio.h>
+#include <string.h>
+#include <cstring>
 
-HttpRequest::HttpRequest(std::string rawRequest):
+HttpRequest::HttpRequest(const char* rawRequest):
+    mCRLF("\r\n"),
     mValid(true),
     mValidVerbs({"GET", "POST", "DELETE"}),
     mValidHttpVersion("HTTP/1.1"),
     kBadRequestReturnValue(404),
     mContentTypeKey("Content-Type"),
     mContentLengthKey("Content-Length") {
-    // yay
+    if (GetLinesOfRawRequestAndCacheData(rawRequest)) {
+        std::cout << "Done." << std::endl;
+    }
 }
 
 bool HttpRequest::IsValid() {
     return mValid;
 }    
+
+std::string HttpRequest::GetVerb() {
+    return mVerb;
+}
     
 int HttpRequest::GetBadRequestReturnCode() {
     return kBadRequestReturnValue;
@@ -32,7 +42,65 @@ std::vector<std::string> HttpRequest::Explode(std::string& s, char delim) {
     return result;
 }
 
-bool HttpRequest::Parse(std::string rawRequest) {
+// This function breaks the Single Responsibility Principle, as it is not only
+//   saving off lines of the request to be returned, it is also caching the
+//   data field of the request (if it exists).
+//
+// This is being done purposefully, as parsing the raw request character by
+//   character is something that should only be done once. It is a special
+//   case of parsing this field that should you get two consecutive CRLF, everything
+//   left to parse is the data field.
+//
+// To take advantage of this special case while the data is already being parsed,
+//   the SRP will be violated.
+bool HttpRequest::GetLinesOfRawRequestAndCacheData(const char* rawRequest) {
+    int charsSinceLastCR(0);
+    int startNewWordAt(0);
+    std::vector<std::string> requestLines;
+    //int wordnumber(0);
+    for (size_t i = 0; i < strlen(rawRequest); i++) {
+        if (rawRequest[i] == '\r') {
+            // Detect a double CRLF and save the rest of the string to the data field
+            if (charsSinceLastCR == 1) {
+                //std::cout << "HERE STARTS THE DOUBLE CRLF" << std::endl;
+                //std::cout << "DATA FIELD:" << std::endl;
+                int dataStartIdx = i + 2;
+                mRequestData = std::string(&rawRequest[dataStartIdx], strlen(rawRequest)-dataStartIdx);
+                //std::cout << mRequestData << std::endl;
+                break;
+            } else {
+                charsSinceLastCR = 0;
+                if (i+1 != strlen(rawRequest)) {
+                    if (rawRequest[i+1] == '\n') {
+                        //std::cout << "Found one: " << i << std::endl;
+                        std::string line(&rawRequest[startNewWordAt], i-startNewWordAt);
+                        requestLines.push_back(line);
+                        startNewWordAt = i+2;
+                        //std::cout << "**" << line << "**" << std::endl;
+                        continue;
+                    }
+                }
+            }
+        }
+        charsSinceLastCR++; 
+    }
+    return true;
+}
+
+/*bool HttpRequest::Parse(char* rawRequest) {
+    //char* line = strtok(rawRequest, mCRLF.c_str());
+    char* crlf = strpbrk(rawRequest, mCRLF.c_str());
+
+    int wordCtr(0);
+    while (nullptr != crlf) {
+        std::cout << "WORD" << wordCtr++ << " **" << std::string(rawRequest, crlf) << "**" << std::endl;
+        //line = strtok(nullptr, mCRLF.c_str());
+        crlf = strpbrk(rawRequest+crlf, mCRLF.c_str());
+    }
+    return true;
+}*/
+
+/*bool HttpRequest::Parse(std::string rawRequest) {
     std::vector<std::string> requestLines = Explode(rawRequest, '\n');
     if (requestLines.empty()) {
         kBadRequestReturnValue = 400;
@@ -56,7 +124,7 @@ bool HttpRequest::Parse(std::string rawRequest) {
     }
 
     return true;
-}
+}*/
 
 bool HttpRequest::ParseFirstLine(std::string firstLine) {
     std::vector<std::string> firstLineArgs = Explode(firstLine, ' ');

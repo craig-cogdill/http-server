@@ -6,6 +6,7 @@
 #include <memory>
 #include <cerrno>
 #include <fcntl.h>
+#include "HttpRequest.h"
 
 std::unique_ptr<HttpServer> HttpServer::Create() {
     std::unique_ptr<HttpServer> httpServerPtr(new HttpServer);
@@ -48,7 +49,7 @@ bool HttpServer::InitializeSocket() {
     return true;
 }
 
-std::string HttpServer::ReadFromSocket() {
+std::string HttpServer::ReadFromSocket(char* buf) {
     std::string toReturn{""};
 
     socklen_t socketAddrLen = sizeof(mSocketAddr);
@@ -63,8 +64,27 @@ std::string HttpServer::ReadFromSocket() {
             exit(EXIT_FAILURE);
         } else {
             char buffer[30000] = {0};
-            long valread = read(newSocket, buffer, 30000);
+            long valread = read(newSocket, buf, 30000);
             if (valread > 0) {
+                /*std::cout << buf << std::endl;
+                for (int i = 0; i < valread; i++) {
+                    if (buf[i] == '\r') {
+                        std::cout << "Found carriage return: " << i << std::endl;
+                    }
+                    if (buf[i] == '\n') {
+                        std::cout << "Found newline: " << i << std::endl;
+                    }
+                }
+                std::string delim{"\r\n"};
+                char* firstWord = strtok(buf, delim.c_str());
+                std::cout << "Valread: " << valread << std::endl;
+                std::cout << "firstWord: **" << firstWord << "**" << std::endl;
+                char* nextWord = strtok(NULL, delim.c_str());
+                std::cout << "secondWord: **" << nextWord << "**" << std::endl;
+                char* thirdWord = strtok(NULL, delim.c_str());
+                std::cout << "thirdWord: **" << thirdWord << "**" << std::endl;
+                */
+                HttpRequest request(buf);
                 toReturn = std::string(&buffer[0], valread);
             }
         }

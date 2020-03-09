@@ -4,12 +4,17 @@
 
 class HttpRequest {
 public:
-    HttpRequest(std::string rawRequest);
+    HttpRequest(const char* rawRequest);
     virtual ~HttpRequest() = default;
 
     bool IsValid();
-    bool Parse(std::string rawRequest);
+    bool GetLinesOfRawRequestAndCacheData(const char* rawRequest);
+    std::string GetVerb();
     bool ParseFirstLine(std::string firstLine);
+
+
+
+
     bool ParseHeaders(std::vector<std::string> headers, int start, int end);
     int GetBadRequestReturnCode();
     size_t GetRequestEmptyLineIndex(std::vector<std::string> requestLines);
@@ -20,8 +25,10 @@ public:
     std::string mUri;
     std::string mContentType;
     std::string mContentLength;
+    std::string mRequestData;
 
 protected:
+    std::string mCRLF;
     bool mValid;
     std::vector<std::string> mValidVerbs;
     std::string mValidHttpVersion;

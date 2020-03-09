@@ -17,7 +17,8 @@ void shutdownSignalHandler(int signalCode) {
 int main(int argc, char *argv[]) {
    signal(SIGTERM, shutdownSignalHandler);
    signal(SIGINT, shutdownSignalHandler);
-    
+   char buffer[30000];
+
    std::unique_ptr<HttpServer> requestServerPtr = HttpServer::Create();
    if (nullptr == requestServerPtr) {
       std::cerr << "Failed to intialize HTTP Server. Cannot continue processing." << std::endl;
@@ -25,7 +26,7 @@ int main(int argc, char *argv[]) {
    }
 
    while (0 == gContinueRunning) {
-      std::string message = requestServerPtr->ReadFromSocket();
+      std::string message = requestServerPtr->ReadFromSocket(&buffer[0]);
       if (!message.empty()) {
          std::cout << "====================================" << std::endl;
          std::cout << message << std::endl;

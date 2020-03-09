@@ -10,7 +10,7 @@ public:
     static std::unique_ptr<HttpServer> Create();
     virtual ~HttpServer();
 
-    std::string ReadFromSocket();
+    std::string ReadFromSocket(char* buf);
 
 protected:
     HttpServer(): mSocketFd(-1), mSocketAddr{}, kPortNumber(8000) {};
