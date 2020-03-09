@@ -14,6 +14,25 @@ public:
     }
     MockHttpServer() : HttpServer() {}
     virtual ~MockHttpServer() = default;
+
+    bool InitializeSocket() {
+        return HttpServer::InitializeSocket();
+    }
+    int Socket(int domain, int type, int protocol) {
+        return 1;
+    }
+    
+    int Bind(int sockfd, const struct sockaddr* addr, socklen_t addrlen) {
+        return 0;
+    }
+    
+    int Listen(int sockfd, int backlog) {
+        return 0;
+    }
+    
+    int Fcntl(int fd, int cmd, int val) {
+        return 0;
+    }
 protected:
 private:
 };
