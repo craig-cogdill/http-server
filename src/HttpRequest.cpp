@@ -35,15 +35,24 @@ std::vector<std::string> HttpRequest::Explode(std::string& s, char delim) {
 bool HttpRequest::Parse(std::string rawRequest) {
     std::vector<std::string> requestLines = Explode(rawRequest, '\n');
     if (requestLines.empty()) {
+        kBadRequestReturnValue = 400;
         return false;
     }
+
     // Process the first line of the request
     bool firstLineSuccess = ParseFirstLine(requestLines.at(0));
-    if (!firstLineSuccess) {
-        return false;
-    }
+    if (!firstLineSuccess) return false;
+    
+    // Check request for data errors
     size_t emptyStrIdx = GetRequestEmptyLineIndex(requestLines);
+    size_t requestSize = requestLines.size();
+    bool hasDataErrors = RequestHasDataErrors(mVerb, requestSize, emptyStrIdx);
+    if (hasDataErrors) return false;
 
+    // Parse Headers, if they exist
+    if (1 != emptyStrIdx) {
+
+    }
 
     // Only the first line of the request is present
     if (emptyStrIdx == 1) {
@@ -83,8 +92,11 @@ bool HttpRequest::ParseFirstLine(std::string firstLine) {
     return true;
 }
     
-bool HttpRequest::ParseHeaders(std::vector<std::string> headers) {
-    for (auto& header : headers) {
+bool HttpRequest::ParseHeaders(std::vector<std::string> headers, int start, int end) {
+    //auto first = headers.begin() + start;
+    //auto last = headers.begin() + end;
+    for (int i = 0; i < end; i++) {
+        auto header = headers.at(i);
         std::vector<std::string> explodedHeader = Explode(header, ':');
         if (2 != explodedHeader.size()) {
             kBadRequestReturnValue = 400;
@@ -106,17 +118,16 @@ size_t HttpRequest::GetRequestEmptyLineIndex(std::vector<std::string> requestLin
     return std::distance(requestLines.begin(), std::find(requestLines.begin(), requestLines.end(), ""));
 }
     
-bool HttpRequest::RequestHasDataErrors(std::vector<std::string> requestLines, const size_t& emptyStringIdx) {
-    size_t requestLinesSize = requestLines.size();
-    if ("GET" == mVerb && emptyStringIdx != requestLinesSize) {
+bool HttpRequest::RequestHasDataErrors(const std::string& verb, const size_t& requestSize, const size_t& emptyStringIdx) {
+    if ("GET" == verb && emptyStringIdx != requestSize-1) {
     // A GET request can have headers, but no data
         kBadRequestReturnValue = 400;
         return true;
-    } else if ("DELETE" == mVerb && emptyStringIdx > 1) {
+    } else if ("DELETE" == verb && emptyStringIdx > 1) {
     // A DELETE request can have no additional headers or data
         kBadRequestReturnValue = 400;
         return true;
-    } else if ("POST" == mVerb && emptyStringIdx == requestLinesSize) {
+    } else if ("POST" == verb && emptyStringIdx == requestSize-1) {
     // A POST request must have data
         kBadRequestReturnValue = 400;
         return true;

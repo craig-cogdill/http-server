@@ -1,6 +1,7 @@
 # http-server
 
 Design Decisions:
+- Easy to build and run
 - Use only the C++ STL for production code
 - As few external dependencies as possible
     - Only googletest is brought in, for unit testing

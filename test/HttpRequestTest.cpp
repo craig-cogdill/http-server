@@ -148,14 +148,14 @@ TEST_F(HttpRequestTest, ParseHeaders_NoHeaders) {
     std::vector<std::string> emptyHeaders{};
     
     HttpRequest httpRequest(mEmptyRequest);
-    EXPECT_TRUE(httpRequest.ParseHeaders(emptyHeaders));
+    EXPECT_TRUE(httpRequest.ParseHeaders(emptyHeaders, 0, 0));
 }
 
 TEST_F(HttpRequestTest, ParseHeaders_MalformedHeader) {
     std::string malformedHeader1{"thisHeaderIsMalformed"};
     
     HttpRequest httpRequest(mEmptyRequest);
-    EXPECT_FALSE(httpRequest.ParseHeaders({malformedHeader1}));
+    EXPECT_FALSE(httpRequest.ParseHeaders({malformedHeader1}, 0, 1));
     EXPECT_EQ(400, httpRequest.GetBadRequestReturnCode());
 }
 
@@ -164,7 +164,7 @@ TEST_F(HttpRequestTest, ParseHeaders_ContentType) {
     std::string header1{"Content-Type: "+contentType};
     
     HttpRequest httpRequest(mEmptyRequest);
-    EXPECT_TRUE(httpRequest.ParseHeaders({header1}));
+    EXPECT_TRUE(httpRequest.ParseHeaders({header1}, 0, 1));
 
     EXPECT_EQ(contentType, httpRequest.mContentType);
 }
@@ -174,7 +174,7 @@ TEST_F(HttpRequestTest, ParseHeaders_ContentLength) {
     std::string header1{"Content-Length: "+contentLength};
     
     HttpRequest httpRequest(mEmptyRequest);
-    EXPECT_TRUE(httpRequest.ParseHeaders({header1}));
+    EXPECT_TRUE(httpRequest.ParseHeaders({header1}, 0, 1));
 
     EXPECT_EQ(contentLength, httpRequest.mContentLength);
 }
@@ -186,7 +186,7 @@ TEST_F(HttpRequestTest, ParseHeaders_BothHeadersPresent) {
     std::string header2{"Content-Type: "+contentType};
     
     HttpRequest httpRequest(mEmptyRequest);
-    EXPECT_TRUE(httpRequest.ParseHeaders({header1, header2}));
+    EXPECT_TRUE(httpRequest.ParseHeaders({header1, header2}, 0, 2));
 
     EXPECT_EQ(contentLength, httpRequest.mContentLength);
     EXPECT_EQ(contentType, httpRequest.mContentType);
@@ -201,7 +201,7 @@ TEST_F(HttpRequestTest, ParseHeaders_OtherHeadersIgnored) {
     std::string header3{"Ignore-Me: "+ignoredValue};
     
     HttpRequest httpRequest(mEmptyRequest);
-    EXPECT_TRUE(httpRequest.ParseHeaders({header1, header2}));
+    EXPECT_TRUE(httpRequest.ParseHeaders({header1, header2, header3}, 0, 3));
 
     EXPECT_EQ(contentLength, httpRequest.mContentLength);
     EXPECT_EQ(contentType, httpRequest.mContentType);
@@ -233,7 +233,7 @@ TEST_F(HttpRequestTest, Parse_BadHttpVersion) {
 }
 
 TEST_F(HttpRequestTest, Parse_Valid) {
-    std::string request{"GET /fake/uri HTTP/1.1"};
+    std::string request{"GET /fake/uri HTTP/1.1\n\n"};
     
     HttpRequest httpRequest(request);
     EXPECT_TRUE(httpRequest.Parse(request));
@@ -285,4 +285,60 @@ TEST_F(HttpRequestTest, GetRequestEmtpyLineIndex_5) {
 
     HttpRequest httpRequest(mEmptyRequest);
     EXPECT_EQ(expectedPosition, httpRequest.GetRequestEmptyLineIndex(headerVec));
+}
+
+TEST_F(HttpRequestTest, RequestHasDataErrors_GET_Error) {
+    std::string verb{"GET"};
+    size_t requestSize{3};
+    size_t emptyLineIndex{1}; // No data allowed in GET
+
+    HttpRequest httpRequest(mEmptyRequest);
+    EXPECT_TRUE(httpRequest.RequestHasDataErrors(verb, requestSize, emptyLineIndex));
+    EXPECT_EQ(400, httpRequest.GetBadRequestReturnCode());
+}
+
+TEST_F(HttpRequestTest, RequestHasDataErrors_GET_Valid_1) {
+    std::string verb{"GET"};
+    size_t requestSize{2};
+    size_t emptyLineIndex{1};
+
+    HttpRequest httpRequest(mEmptyRequest);
+    EXPECT_FALSE(httpRequest.RequestHasDataErrors(verb, requestSize, emptyLineIndex));
+}
+
+TEST_F(HttpRequestTest, RequestHasDataErrors_GET_Valid_2) {
+    std::string verb{"GET"};
+    size_t requestSize{4};
+    size_t emptyLineIndex{3};
+
+    HttpRequest httpRequest(mEmptyRequest);
+    EXPECT_FALSE(httpRequest.RequestHasDataErrors(verb, requestSize, emptyLineIndex));
+}
+
+TEST_F(HttpRequestTest, RequestHasDataErrors_PUT_Error) {
+    std::string verb{"POST"};
+    size_t requestSize{4};
+    size_t emptyLineIndex{3};
+
+    HttpRequest httpRequest(mEmptyRequest);
+    EXPECT_TRUE(httpRequest.RequestHasDataErrors(verb, requestSize, emptyLineIndex));
+    EXPECT_EQ(400, httpRequest.GetBadRequestReturnCode());
+}
+
+TEST_F(HttpRequestTest, RequestHasDataErrors_PUT_Valid_1) {
+    std::string verb{"POST"};
+    size_t requestSize{4};
+    size_t emptyLineIndex{2};
+
+    HttpRequest httpRequest(mEmptyRequest);
+    EXPECT_FALSE(httpRequest.RequestHasDataErrors(verb, requestSize, emptyLineIndex));
+}
+
+TEST_F(HttpRequestTest, RequestHasDataErrors_PUT_Valid_2) {
+    std::string verb{"POST"};
+    size_t requestSize{50};
+    size_t emptyLineIndex{2};
+
+    HttpRequest httpRequest(mEmptyRequest);
+    EXPECT_FALSE(httpRequest.RequestHasDataErrors(verb, requestSize, emptyLineIndex));
 }
