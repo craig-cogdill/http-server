@@ -1,13 +1,8 @@
-#define CATCH_CONFIG_MAIN
-#include "catch.hpp"
-
+#include "HttpServerTest.h"
 #include "MockHttpServer.h"
 
-TEST_CASE("Basic instantiation") {
+TEST_F(HttpServerTest, SanityCheck) {
     std::unique_ptr<MockHttpServer> mockHttpServer = MockHttpServer::Create();
-    REQUIRE(nullptr != mockHttpServer);
+    EXPECT_TRUE(nullptr != mockHttpServer);
 
-    SECTION("Default section") {
-        REQUIRE(true);
-    }
 }

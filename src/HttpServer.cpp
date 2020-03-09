@@ -35,7 +35,7 @@ bool HttpServer::InitializeSocket() {
         return false;
     }
     // Set the socket to non-binding mode
-    fcntl(mSocketFd, F_SETFL, O_NONBLOCK);
+    Fcntl(mSocketFd, F_SETFL, O_NONBLOCK);
     return true;
 }
 
@@ -76,4 +76,8 @@ int HttpServer::Bind(int sockfd, const struct sockaddr* addr, socklen_t addrlen)
     
 int HttpServer::Listen(int sockfd, int backlog) {
     return listen(sockfd, backlog);
+}
+    
+int HttpServer::Fcntl(int fd, int cmd, int val) {
+    return fcntl(fd, cmd, val);
 }

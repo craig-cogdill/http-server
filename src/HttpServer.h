@@ -13,12 +13,13 @@ public:
 
 protected:
     HttpServer(): mSocketFd(-1), mSocketAddr{}, kPortNumber(8000) {};
-    bool InitializeSocket();
+    virtual bool InitializeSocket();
 
     // System call wrappers
-    int Socket(int domain, int type, int protocol);
-    int Bind(int sockfd, const struct sockaddr* addr, socklen_t addrlen);
-    int Listen(int sockfd, int backlog);
+    virtual int Socket(int domain, int type, int protocol);
+    virtual int Bind(int sockfd, const struct sockaddr* addr, socklen_t addrlen);
+    virtual int Listen(int sockfd, int backlog);
+    virtual int Fcntl(int fd, int cmd, int val);
 
 private:
     int mSocketFd;
