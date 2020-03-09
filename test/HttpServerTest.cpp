@@ -4,7 +4,7 @@
 #include "MockHttpServer.h"
 
 TEST_CASE("Basic instantiation") {
-    MockHttpSever mockHttpServer;
+    MockHttpServer mockHttpServer;
 
     SECTION("Default section") {
         REQUIRE(true);

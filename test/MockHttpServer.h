@@ -1,9 +1,9 @@
 #include "HttpServer.h"
 
-class MockHttpSever : public HttpServer {
+class MockHttpServer : public HttpServer {
     public:
-        MockHttpSever() : HttpServer() {}
-        virtual ~MockHttpSever() = default;
+        MockHttpServer() : HttpServer() {}
+        virtual ~MockHttpServer() = default;
     protected:
     private:
 };
