@@ -18,7 +18,7 @@ int main(int argc, char *argv[]) {
    signal(SIGTERM, shutdownSignalHandler);
    signal(SIGINT, shutdownSignalHandler);
     
-   std::unique_ptr<HttpServer> requestServerPtr = HttpServer::CreateHttpServer();
+   std::unique_ptr<HttpServer> requestServerPtr = HttpServer::Create();
    if (nullptr == requestServerPtr) {
       std::cerr << "Failed to intialize HTTP Server. Cannot continue processing." << std::endl;
       exit(-1);

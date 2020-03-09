@@ -7,21 +7,16 @@
 #include <cerrno>
 #include <fcntl.h>
 
-std::unique_ptr<HttpServer> HttpServer::CreateHttpServer() {
+std::unique_ptr<HttpServer> HttpServer::Create() {
     std::unique_ptr<HttpServer> httpServerPtr(new HttpServer);
-    if (!httpServerPtr->Setup()) {
+    if (!httpServerPtr->InitializeSocket()) {
         return nullptr;
     }
     return httpServerPtr;
 }
 
-std::string HttpServer::what() {
-    return std::string{"HttpServer"};
-}
-
-bool HttpServer::Setup() {
-    // Creating socket file descriptor
-    if ((mSocketFd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
+bool HttpServer::InitializeSocket() {
+    if ((mSocketFd = Socket(AF_INET, SOCK_STREAM, 0)) == 0) {
         std::cerr << "Failed to initialize socket" << std::endl;
         return false;
     }
@@ -31,12 +26,11 @@ bool HttpServer::Setup() {
     mSocketAddr.sin_port = htons(kPortNumber);
     memset(mSocketAddr.sin_zero, '\0', sizeof mSocketAddr.sin_zero);
     
-    
-    if (bind(mSocketFd, (struct sockaddr *) &mSocketAddr, sizeof(mSocketAddr)) < 0) {
+    if (Bind(mSocketFd, (struct sockaddr *) &mSocketAddr, sizeof(mSocketAddr)) < 0) {
         std::cerr << "Failed to bind socket" << std::endl;
         return false;
     }
-    if (listen(mSocketFd, 10) < 0) {
+    if (Listen(mSocketFd, 10) < 0) {
         std::cerr << "Failed to set socket listen" << std::endl;
         return false;
     }
@@ -48,8 +42,8 @@ bool HttpServer::Setup() {
 std::string HttpServer::ReadFromSocket() {
     std::string toReturn{""};
 
-    int socketAddrLen = sizeof(mSocketAddr);
-    int newSocket = accept(mSocketFd, (struct sockaddr *) &mSocketAddr, (socklen_t*) &socketAddrLen);
+    socklen_t socketAddrLen = sizeof(mSocketAddr);
+    int newSocket = accept(mSocketFd, reinterpret_cast<sockaddr*>(&mSocketAddr), &socketAddrLen);
 
     // errno will be set to EAGAIN or EWOULDBLOCK if there are no pending
     //      socket connections. Both must be checked for portability.
@@ -68,7 +62,18 @@ std::string HttpServer::ReadFromSocket() {
     }
     close(newSocket);
     return toReturn;
-        
-    //write(new_socket , hello , strlen(hello));
-    //printf("------------------Hello message sent-------------------\n");
+}
+
+// System call wrappers
+
+int HttpServer::Socket(int domain, int type, int protocol) {
+    return socket(domain, type, protocol);
+}
+    
+int HttpServer::Bind(int sockfd, const struct sockaddr* addr, socklen_t addrlen) {
+    return bind(sockfd, addr, addrlen);
+}
+    
+int HttpServer::Listen(int sockfd, int backlog) {
+    return listen(sockfd, backlog);
 }
