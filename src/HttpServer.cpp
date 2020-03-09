@@ -8,11 +8,11 @@
 #include <fcntl.h>
 
 std::unique_ptr<HttpServer> HttpServer::CreateHttpServer() {
-    HttpServer httpServer;
-    if (!httpServer.Setup()) {
+    std::unique_ptr<HttpServer> httpServerPtr(new HttpServer);
+    if (!httpServerPtr->Setup()) {
         return nullptr;
     }
-    return std::make_unique<HttpServer>(httpServer);
+    return httpServerPtr;
 }
 
 std::string HttpServer::what() {
@@ -66,7 +66,6 @@ std::string HttpServer::ReadFromSocket() {
             }
         }
     }
-    fcntl(mSocketFd, F_SETFL, O_NONBLOCK);
     close(newSocket);
     return toReturn;
         
