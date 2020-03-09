@@ -51,16 +51,11 @@ bool HttpRequest::Parse(std::string rawRequest) {
 
     // Parse Headers, if they exist
     if (1 != emptyStrIdx) {
-
+        bool headersParsed = ParseHeaders(requestLines, 1, emptyStrIdx);
+        if (!headersParsed) return false;
     }
 
-    // Only the first line of the request is present
-    if (emptyStrIdx == 1) {
-        return ParseFirstLine(requestLines.at(0));
-    } else {
-
-    }
-    return ParseFirstLine(requestLines.at(0));
+    return true;
 }
 
 bool HttpRequest::ParseFirstLine(std::string firstLine) {
