@@ -10,7 +10,6 @@ namespace {
 }
 
 void shutdownSignalHandler(int signalCode) {
-   std::cout << "Interrupt signal caught: " << signalCode << std::endl;
    gContinueRunning = signalCode;
    gExitCode = signalCode;
 }
@@ -19,8 +18,6 @@ int main(int argc, char *argv[]) {
    signal(SIGTERM, shutdownSignalHandler);
    signal(SIGINT, shutdownSignalHandler);
     
-   std::cout << "Hello world4" << std::endl;
-
    std::unique_ptr<HttpServer> requestServerPtr = HttpServer::CreateHttpServer();
    if (nullptr == requestServerPtr) {
       std::cerr << "Failed to intialize HTTP Server. Cannot continue processing." << std::endl;
@@ -30,7 +27,9 @@ int main(int argc, char *argv[]) {
    while (0 == gContinueRunning) {
       std::string message = requestServerPtr->ReadFromSocket();
       if (!message.empty()) {
-         std::cout << "Read this from the socket: " << std::endl;
+         std::cout << "====================================" << std::endl;
+         std::cout << message << std::endl;
+         std::cout << "====================================" << std::endl;
       }
       std::this_thread::sleep_for(std::chrono::milliseconds(1));
    }

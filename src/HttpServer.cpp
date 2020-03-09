@@ -47,36 +47,28 @@ bool HttpServer::Setup() {
 
 std::string HttpServer::ReadFromSocket() {
     std::string toReturn{""};
-    long valread{-1};
-    //int newSocket(-1);
+
     int socketAddrLen = sizeof(mSocketAddr);
-
-
     int newSocket = accept(mSocketFd, (struct sockaddr *) &mSocketAddr, (socklen_t*) &socketAddrLen);
-    if (errno == EAGAIN || errno == EWOULDBLOCK) {
-        // Do something 
-    } else {
+
+    // errno will be set to EAGAIN or EWOULDBLOCK if there are no pending
+    //      socket connections. Both must be checked for portability.
+    if (!(errno == EAGAIN || errno == EWOULDBLOCK)) {
         if (newSocket < 0) {
             std::cerr << "Error reading from socket: " << newSocket << std::endl;
+            close(newSocket);
             exit(EXIT_FAILURE);
         } else {
             char buffer[30000] = {0};
-            valread = read(newSocket, buffer, 30000);
+            long valread = read(newSocket, buffer, 30000);
             if (valread > 0) {
-                printf("%s\n", buffer);
-            } else {
-                std::cout << "Didn't read anything" << std::endl;
+                toReturn = std::string(&buffer[0], valread);
             }
-            toReturn = std::string(*buffer, valread);
         }
     }
     fcntl(mSocketFd, F_SETFL, O_NONBLOCK);
     close(newSocket);
     return toReturn;
-    //if ((newSocket = accept(mSocketFd, (struct sockaddr *) &mSocketAddr, (socklen_t*) &socketAddrLen)) < 0) {
-    //    std::cerr << "Error reading from socket" << std::endl
-    //    exit(EXIT_FAILURE);
-    //}
         
     //write(new_socket , hello , strlen(hello));
     //printf("------------------Hello message sent-------------------\n");
