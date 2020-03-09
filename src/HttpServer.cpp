@@ -52,7 +52,7 @@ std::string HttpServer::ReadFromSocket() {
     std::string toReturn{""};
 
     socklen_t socketAddrLen = sizeof(mSocketAddr);
-    int newSocket = accept(mSocketFd, reinterpret_cast<sockaddr*>(&mSocketAddr), &socketAddrLen);
+    int newSocket = Accept(mSocketFd, reinterpret_cast<sockaddr*>(&mSocketAddr), &socketAddrLen);
 
     // errno will be set to EAGAIN or EWOULDBLOCK if there are no pending
     //      socket connections. Both must be checked for portability.
@@ -89,4 +89,12 @@ int HttpServer::Listen(int sockfd, int backlog) {
     
 int HttpServer::Fcntl(int fd, int cmd, int val) {
     return fcntl(fd, cmd, val);
+}
+    
+int HttpServer::Accept(int sockfd, struct sockaddr* addr, socklen_t* addrlen) {
+    return accept(sockfd, addr, addrlen);
+}
+
+ssize_t HttpServer::Read(int fd, void* buf, size_t count) {
+    return read(fd, buf, count);
 }

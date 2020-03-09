@@ -21,6 +21,8 @@ protected:
     virtual int Bind(int sockfd, const struct sockaddr* addr, socklen_t addrlen);
     virtual int Listen(int sockfd, int backlog);
     virtual int Fcntl(int fd, int cmd, int val);
+    virtual int Accept(int sockfd, struct sockaddr* addr, socklen_t* addrlen);
+    virtual ssize_t Read(int fd, void* buf, size_t count);
 
 private:
     int mSocketFd;

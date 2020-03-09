@@ -34,6 +34,15 @@ public:
     int Fcntl(int fd, int cmd, int val) override {
         return mFcntlRetVal;
     }
+ 
+    int Accept(int sockfd, struct sockaddr* addr, socklen_t* addrlen) override {
+        errno = mErrnoRetVal;
+        return mAcceptRetVal;
+    }
+    
+    ssize_t Read(int fd, void* buf, size_t count) override {
+        return mReadRetVal;
+    }
 
     // Return variables for targeting mocking of system calls
     //    All variables defaulted to 'happy path' return values
@@ -45,4 +54,8 @@ public:
     int mBindRetVal{0};
     int mListenRetVal{0};
     int mFcntlRetVal{0};
+    int mAcceptRetVal{0};
+    ssize_t mReadRetVal{1};
+
+    int mErrnoRetVal{0};
 };
