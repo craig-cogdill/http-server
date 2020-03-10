@@ -46,7 +46,7 @@ endif()
 # Now simply link against gtest or gtest_main as needed. Eg
 include_directories (${gtest_SOURCE_DIR}/include)
 #file (GLOB TEST_FILES ${TEST_DIR}/*.cpp ${SRC_FILES}/*.h ${SRC_FILES}/HttpServer.cpp ${SRC_FILES}/HttpRequest.cpp)
-file (GLOB TEST_FILES ${TEST_DIR}/HttpRequestTest.cpp ${SRC_FILES}/HttpRequest.h ${SRC_FILES}/HttpRequest.cpp)
+file (GLOB TEST_FILES ${TEST_DIR}/HttpRequestTest.cpp ${TEST_DIR}/MockHttpRequest.h ${SRC_FILES}/HttpRequest.h ${SRC_FILES}/HttpRequest.cpp)
 add_executable(unit-test-runner test/main.cpp ${TEST_FILES})
 target_link_libraries(unit-test-runner gtest_main)
 

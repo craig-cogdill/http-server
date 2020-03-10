@@ -8,26 +8,33 @@ public:
     virtual ~HttpRequest() = default;
 
     bool IsValid();
-    bool GetLinesOfRawRequestAndCacheData(const char* rawRequest);
+    int GetBadRequestReturnCode();
     std::string GetVerb();
-    bool ParseFirstLine(std::string firstLine);
+    std::string GetData();
+    std::string GetUri();
 
 
 
 
     bool ParseHeaders(std::vector<std::string> headers, int start, int end);
-    int GetBadRequestReturnCode();
     size_t GetRequestEmptyLineIndex(std::vector<std::string> requestLines);
     bool RequestHasDataErrors(const std::string& verb, const size_t& requestSize, const size_t& emptyStringIdx);
     std::vector<std::string> Explode(std::string& s, char delim);
 
+
+protected:
+    // This constructor exists so that unit tests can avoid the constructor parsing
+    HttpRequest();
+
+    std::vector<std::string> GetLinesOfRawRequestAndCacheData(const char* rawRequest);
+    
     std::string mVerb;
     std::string mUri;
     std::string mContentType;
     std::string mContentLength;
     std::string mRequestData;
-
-protected:
+    
+    bool CacheFirstLineRequestArgs(std::string firstLine);
     std::string mCRLF;
     bool mValid;
     std::vector<std::string> mValidVerbs;

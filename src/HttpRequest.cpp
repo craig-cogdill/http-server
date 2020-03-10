@@ -6,7 +6,14 @@
 #include <string.h>
 #include <cstring>
 
+
+
 HttpRequest::HttpRequest(const char* rawRequest):
+    mVerb(""),
+    mUri(""),
+    mContentType(""),
+    mContentLength(""),
+    mRequestData(""),
     mCRLF("\r\n"),
     mValid(true),
     mValidVerbs({"GET", "POST", "DELETE"}),
@@ -14,9 +21,22 @@ HttpRequest::HttpRequest(const char* rawRequest):
     kBadRequestReturnValue(404),
     mContentTypeKey("Content-Type"),
     mContentLengthKey("Content-Length") {
-    if (GetLinesOfRawRequestAndCacheData(rawRequest)) {
-        std::cout << "Done." << std::endl;
-    }
+    std::vector<std::string> requestLines = GetLinesOfRawRequestAndCacheData(rawRequest);
+}
+
+HttpRequest::HttpRequest():
+    mVerb(""),
+    mUri(""),
+    mContentType(""),
+    mContentLength(""),
+    mRequestData(""),
+    mCRLF("\r\n"),
+    mValid(true),
+    mValidVerbs({"GET", "POST", "DELETE"}),
+    mValidHttpVersion("HTTP/1.1"),
+    kBadRequestReturnValue(404),
+    mContentTypeKey("Content-Type"),
+    mContentLengthKey("Content-Length") {
 }
 
 bool HttpRequest::IsValid() {
@@ -25,6 +45,14 @@ bool HttpRequest::IsValid() {
 
 std::string HttpRequest::GetVerb() {
     return mVerb;
+}
+
+std::string HttpRequest::GetUri() {
+    return mUri;
+}
+    
+std::string HttpRequest::GetData() {
+    return mRequestData;
 }
     
 int HttpRequest::GetBadRequestReturnCode() {
@@ -42,8 +70,8 @@ std::vector<std::string> HttpRequest::Explode(std::string& s, char delim) {
     return result;
 }
 
-// This function breaks the Single Responsibility Principle, as it is not only
-//   saving off lines of the request to be returned, it is also caching the
+// This function breaks the Single Responsibility Principle, as it not only
+//   returns the first line and headers of the request, it is also caches the
 //   data field of the request (if it exists).
 //
 // This is being done purposefully, as parsing the raw request character by
@@ -53,7 +81,7 @@ std::vector<std::string> HttpRequest::Explode(std::string& s, char delim) {
 //
 // The SRP is violated to take advantage of this special case while the data is
 //   already being parsed.
-bool HttpRequest::GetLinesOfRawRequestAndCacheData(const char* rawRequest) {
+std::vector<std::string> HttpRequest::GetLinesOfRawRequestAndCacheData(const char* rawRequest) {
     int charsSinceLastCR(0);
     int startNewWordAt(0);
     std::vector<std::string> requestLines;
@@ -84,52 +112,13 @@ bool HttpRequest::GetLinesOfRawRequestAndCacheData(const char* rawRequest) {
         }
         charsSinceLastCR++; 
     }
-    return true;
+    return requestLines;
 }
 
-/*bool HttpRequest::Parse(char* rawRequest) {
-    //char* line = strtok(rawRequest, mCRLF.c_str());
-    char* crlf = strpbrk(rawRequest, mCRLF.c_str());
-
-    int wordCtr(0);
-    while (nullptr != crlf) {
-        std::cout << "WORD" << wordCtr++ << " **" << std::string(rawRequest, crlf) << "**" << std::endl;
-        //line = strtok(nullptr, mCRLF.c_str());
-        crlf = strpbrk(rawRequest+crlf, mCRLF.c_str());
-    }
-    return true;
-}*/
-
-/*bool HttpRequest::Parse(std::string rawRequest) {
-    std::vector<std::string> requestLines = Explode(rawRequest, '\n');
-    if (requestLines.empty()) {
-        kBadRequestReturnValue = 400;
-        return false;
-    }
-
-    // Process the first line of the request
-    bool firstLineSuccess = ParseFirstLine(requestLines.at(0));
-    if (!firstLineSuccess) return false;
-    
-    // Check request for data errors
-    size_t emptyStrIdx = GetRequestEmptyLineIndex(requestLines);
-    size_t requestSize = requestLines.size();
-    bool hasDataErrors = RequestHasDataErrors(mVerb, requestSize, emptyStrIdx);
-    if (hasDataErrors) return false;
-
-    // Parse Headers, if they exist
-    if (1 != emptyStrIdx) {
-        bool headersParsed = ParseHeaders(requestLines, 1, emptyStrIdx);
-        if (!headersParsed) return false;
-    }
-
-    return true;
-}*/
-
-bool HttpRequest::ParseFirstLine(std::string firstLine) {
+bool HttpRequest::CacheFirstLineRequestArgs(std::string firstLine) {
     std::vector<std::string> firstLineArgs = Explode(firstLine, ' ');
     if (3 != firstLineArgs.size()) {
-        std::cout << "Wrong args: " << firstLineArgs.size() << std::endl;
+        std::cout << "Invalid first line args: " << firstLineArgs.size() << std::endl;
         kBadRequestReturnValue = 400;
         return false;        
     }

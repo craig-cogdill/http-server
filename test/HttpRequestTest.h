@@ -1,4 +1,3 @@
-
 #include "gtest/gtest.h"
 
 class HttpRequestTest : public ::testing::Test {
