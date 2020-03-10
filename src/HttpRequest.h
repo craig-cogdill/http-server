@@ -16,7 +16,6 @@ public:
     std::string GetContentType();
     std::string GetContentLength();
 
-    bool CacheHeaders(std::vector<std::string> headers);
     std::vector<std::string> Explode(std::string& s, char delim);
 
 protected:
@@ -26,6 +25,7 @@ protected:
     std::vector<std::string> GetLinesOfRawRequestAndCacheData(const char* rawRequest);
     bool CacheFirstLineRequestArgs(std::string firstLine);
     bool RequestHasDataErrors(const std::string& verb, const std::string& requestData);
+    bool CacheHeaders(std::vector<std::string> headers);
     
     std::string mVerb;
     std::string mUri;

@@ -258,12 +258,11 @@ TEST_F(HttpRequestTest, RequestHasDataErrors_POST_WithData) {
 
 TEST_F(HttpRequestTest, CacheHeaders_Empty) {
     std::string emptyString("");
-    std::vector<std::string> headers{{}};
+    std::vector<std::string> headers{};
 
     MockHttpRequest mockHttpRequest;
-    // There should never actually be an empty header line
-    //   in a valid request
-    EXPECT_FALSE(mockHttpRequest.CacheHeaders(headers));
+    // Headers might be 'empty' if there are none present in the request
+    EXPECT_TRUE(mockHttpRequest.CacheHeaders(headers));
     EXPECT_EQ(emptyString, mockHttpRequest.GetContentType());
     EXPECT_EQ(emptyString, mockHttpRequest.GetContentLength());
 }
@@ -330,4 +329,14 @@ TEST_F(HttpRequestTest, CacheHeaders_ContentLengthAndContentType) {
     EXPECT_TRUE(mockHttpRequest.CacheHeaders(headers));
     EXPECT_EQ(contentTypeVal, mockHttpRequest.GetContentType());
     EXPECT_EQ(contentLengthVal, mockHttpRequest.GetContentLength());
+}
+
+TEST_F(HttpRequestTest, FullRequestTest) {
+    const char* rawRequest ="POST /test/uri HTTP/1.1\r\n"
+                            "Content-Type: application/json\r\n"
+                            "Content-Length: 20\r\n\r\n"
+                            "{\"hello\": \"world\"}";
+    
+    HttpRequest httpRequest(rawRequest);
+    EXPECT_TRUE(httpRequest.IsValid());
 }

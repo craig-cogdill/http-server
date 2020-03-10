@@ -2,13 +2,14 @@
 
 Design Decisions:
 - Easy to build and run
-- Use only the C++ STL for production code
+- Use only C code and the C++ STL for production code
 - As few external dependencies as possible
     - Only googletest is brought in, for unit testing
 - High reusability for future applications
 - Maximum code coverage through unit tests
 - Show what I know
     - Have not used GMock, so instead used a handmade inheritance Mock model for unit testing
+    - Built for Linux which is what I have programmed for before (and only have access to at home)
 
 Coding Goals:
 - No raw pointers, unless unavoidable

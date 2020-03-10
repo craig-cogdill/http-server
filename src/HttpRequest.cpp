@@ -21,6 +21,13 @@ HttpRequest::HttpRequest(const char* rawRequest):
     mContentLengthKey("Content-Length"),
     mHeaderDelimiter(": ") {
     std::vector<std::string> requestLines = GetLinesOfRawRequestAndCacheData(rawRequest);
+    if (!requestLines.empty()) {
+        std::string firstLine = requestLines.at(0);
+        requestLines.erase(requestLines.begin());
+        mValid = CacheFirstLineRequestArgs(firstLine)
+            && !RequestHasDataErrors(GetVerb(), GetData())
+            && CacheHeaders(requestLines);
+    }
 }
 
 HttpRequest::HttpRequest():
@@ -153,19 +160,21 @@ bool HttpRequest::CacheFirstLineRequestArgs(std::string firstLine) {
 }
     
 bool HttpRequest::CacheHeaders(std::vector<std::string> headers) {
-    for (auto& header : headers) {
-        size_t delimIdx = header.find(mHeaderDelimiter);
-        if (std::string::npos == delimIdx) {
-            kBadRequestReturnValue = 400;
-            return false;
-        }
-        // Store desired headers, ignore the rest
-        std::string headerKey = header.substr(0, delimIdx);
-        std::string headerVal = header.substr(delimIdx+2, header.length());
-        if (headerKey == mContentTypeKey) {
-            mContentType = headerVal;
-        } else if (headerKey == mContentLengthKey) {
-            mContentLength = headerVal;
+    if (!headers.empty()) {
+        for (auto& header : headers) {
+            size_t delimIdx = header.find(mHeaderDelimiter);
+            if (std::string::npos == delimIdx) {
+                kBadRequestReturnValue = 400;
+                return false;
+            }
+            // Store desired headers, ignore the rest
+            std::string headerKey = header.substr(0, delimIdx);
+            std::string headerVal = header.substr(delimIdx+2, header.length());
+            if (headerKey == mContentTypeKey) {
+                mContentType = headerVal;
+            } else if (headerKey == mContentLengthKey) {
+                mContentLength = headerVal;
+            }
         }
     }
     return true;
