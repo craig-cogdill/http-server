@@ -13,20 +13,18 @@ public:
     std::string GetVerb();
     std::string GetData();
     std::string GetUri();
+    std::string GetContentType();
+    std::string GetContentLength();
 
-
-
-
-    bool ParseHeaders(std::vector<std::string> headers, int start, int end);
-    size_t GetRequestEmptyLineIndex(std::vector<std::string> requestLines);
+    bool CacheHeaders(std::vector<std::string> headers);
     std::vector<std::string> Explode(std::string& s, char delim);
-
 
 protected:
     // This constructor exists so that unit tests can avoid the constructor parsing
     HttpRequest();
 
     std::vector<std::string> GetLinesOfRawRequestAndCacheData(const char* rawRequest);
+    bool CacheFirstLineRequestArgs(std::string firstLine);
     bool RequestHasDataErrors(const std::string& verb, const std::string& requestData);
     
     std::string mVerb;
@@ -35,7 +33,6 @@ protected:
     std::string mContentLength;
     std::string mRequestData;
     
-    bool CacheFirstLineRequestArgs(std::string firstLine);
     std::string mCRLF;
     bool mValid;
     std::vector<std::string> mValidVerbs;
@@ -43,4 +40,5 @@ protected:
     int kBadRequestReturnValue;
     std::string mContentTypeKey;
     std::string mContentLengthKey;
+    std::string mHeaderDelimiter;
 };

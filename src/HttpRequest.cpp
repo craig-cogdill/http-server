@@ -18,7 +18,8 @@ HttpRequest::HttpRequest(const char* rawRequest):
     mValidHttpVersion("HTTP/1.1"),
     kBadRequestReturnValue(404),
     mContentTypeKey("Content-Type"),
-    mContentLengthKey("Content-Length") {
+    mContentLengthKey("Content-Length"),
+    mHeaderDelimiter(": ") {
     std::vector<std::string> requestLines = GetLinesOfRawRequestAndCacheData(rawRequest);
 }
 
@@ -34,7 +35,8 @@ HttpRequest::HttpRequest():
     mValidHttpVersion("HTTP/1.1"),
     kBadRequestReturnValue(404),
     mContentTypeKey("Content-Type"),
-    mContentLengthKey("Content-Length") {
+    mContentLengthKey("Content-Length"),
+    mHeaderDelimiter(": ") {
 }
 
 bool HttpRequest::IsValid() {
@@ -51,6 +53,14 @@ std::string HttpRequest::GetUri() {
     
 std::string HttpRequest::GetData() {
     return mRequestData;
+}
+
+std::string HttpRequest::GetContentLength() {
+    return mContentLength;
+}
+
+std::string HttpRequest::GetContentType() {
+    return mContentType;
 }
     
 int HttpRequest::GetBadRequestReturnCode() {
@@ -142,19 +152,16 @@ bool HttpRequest::CacheFirstLineRequestArgs(std::string firstLine) {
     return true;
 }
     
-bool HttpRequest::ParseHeaders(std::vector<std::string> headers, int start, int end) {
-    //auto first = headers.begin() + start;
-    //auto last = headers.begin() + end;
-    for (int i = 0; i < end; i++) {
-        auto header = headers.at(i);
-        std::vector<std::string> explodedHeader = Explode(header, ':');
-        if (2 != explodedHeader.size()) {
+bool HttpRequest::CacheHeaders(std::vector<std::string> headers) {
+    for (auto& header : headers) {
+        size_t delimIdx = header.find(mHeaderDelimiter);
+        if (std::string::npos == delimIdx) {
             kBadRequestReturnValue = 400;
             return false;
         }
-        // Store desired headers
-        std::string headerKey = explodedHeader.at(0);
-        std::string headerVal = explodedHeader.at(1).erase(0,1); // Remove leading space
+        // Store desired headers, ignore the rest
+        std::string headerKey = header.substr(0, delimIdx);
+        std::string headerVal = header.substr(delimIdx+2, header.length());
         if (headerKey == mContentTypeKey) {
             mContentType = headerVal;
         } else if (headerKey == mContentLengthKey) {
@@ -162,10 +169,6 @@ bool HttpRequest::ParseHeaders(std::vector<std::string> headers, int start, int 
         }
     }
     return true;
-}
-    
-size_t HttpRequest::GetRequestEmptyLineIndex(std::vector<std::string> requestLines) {
-    return std::distance(requestLines.begin(), std::find(requestLines.begin(), requestLines.end(), ""));
 }
     
 bool HttpRequest::RequestHasDataErrors(const std::string& verb, const std::string& requestData) {

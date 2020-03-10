@@ -255,3 +255,79 @@ TEST_F(HttpRequestTest, RequestHasDataErrors_POST_WithData) {
     MockHttpRequest mockHttpRequest;
     EXPECT_FALSE(mockHttpRequest.RequestHasDataErrors(verb, emptyData));
 }
+
+TEST_F(HttpRequestTest, CacheHeaders_Empty) {
+    std::string emptyString("");
+    std::vector<std::string> headers{{}};
+
+    MockHttpRequest mockHttpRequest;
+    // There should never actually be an empty header line
+    //   in a valid request
+    EXPECT_FALSE(mockHttpRequest.CacheHeaders(headers));
+    EXPECT_EQ(emptyString, mockHttpRequest.GetContentType());
+    EXPECT_EQ(emptyString, mockHttpRequest.GetContentLength());
+}
+
+TEST_F(HttpRequestTest, CacheHeaders_SingleIgnoredHeader) {
+    std::string emptyString("");
+    std::string ignoredHeader("Fake-Header: header/key");
+    std::vector<std::string> headers{{ignoredHeader}};
+
+    MockHttpRequest mockHttpRequest;
+    EXPECT_TRUE(mockHttpRequest.CacheHeaders(headers));
+    EXPECT_EQ(emptyString, mockHttpRequest.GetContentType());
+    EXPECT_EQ(emptyString, mockHttpRequest.GetContentLength());
+}
+
+TEST_F(HttpRequestTest, CacheHeaders_BadHeader) {
+    std::string emptyString("");
+    std::string ignoredHeader("Fake-Header == header/key");
+    std::vector<std::string> headers{{ignoredHeader}};
+
+    MockHttpRequest mockHttpRequest;
+    EXPECT_FALSE(mockHttpRequest.CacheHeaders(headers));
+    EXPECT_EQ(400, mockHttpRequest.GetBadRequestReturnCode());
+    EXPECT_EQ(emptyString, mockHttpRequest.GetContentType());
+    EXPECT_EQ(emptyString, mockHttpRequest.GetContentLength());
+}
+
+TEST_F(HttpRequestTest, CacheHeaders_ContentType) {
+    std::string contentTypeKey("Content-Type");
+    std::string contentTypeVal("application/json");
+    std::string contentTypeHeader(contentTypeKey+": "+contentTypeVal);
+    std::vector<std::string> headers{{contentTypeHeader}};
+
+    MockHttpRequest mockHttpRequest;
+    EXPECT_TRUE(mockHttpRequest.CacheHeaders(headers));
+    EXPECT_EQ(contentTypeVal, mockHttpRequest.GetContentType());
+    EXPECT_EQ("", mockHttpRequest.GetContentLength());
+}
+
+TEST_F(HttpRequestTest, CacheHeaders_ContentLength) {
+    std::string contentLengthKey("Content-Length");
+    std::string contentLengthVal("1234");
+    std::string contentLengthHeader(contentLengthKey+": "+contentLengthVal);
+    std::vector<std::string> headers{{contentLengthHeader}};
+
+    MockHttpRequest mockHttpRequest;
+    EXPECT_TRUE(mockHttpRequest.CacheHeaders(headers));
+    EXPECT_EQ("", mockHttpRequest.GetContentType());
+    EXPECT_EQ(contentLengthVal, mockHttpRequest.GetContentLength());
+}
+
+TEST_F(HttpRequestTest, CacheHeaders_ContentLengthAndContentType) {
+    std::string contentLengthKey("Content-Length");
+    std::string contentLengthVal("1234");
+    std::string contentLengthHeader(contentLengthKey+": "+contentLengthVal);
+    
+    std::string contentTypeKey("Content-Type");
+    std::string contentTypeVal("application/json");
+    std::string contentTypeHeader(contentTypeKey+": "+contentTypeVal);
+    
+    std::vector<std::string> headers{{contentLengthHeader}, {contentTypeHeader}};
+
+    MockHttpRequest mockHttpRequest;
+    EXPECT_TRUE(mockHttpRequest.CacheHeaders(headers));
+    EXPECT_EQ(contentTypeVal, mockHttpRequest.GetContentType());
+    EXPECT_EQ(contentLengthVal, mockHttpRequest.GetContentLength());
+}
