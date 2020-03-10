@@ -204,3 +204,54 @@ TEST_F(HttpRequestTest, CacheFirstLineRequestArgs_Valid_DELETE) {
     EXPECT_EQ(expectedVerb, mockHttpRequest.GetVerb());
     EXPECT_EQ(expectedUri, mockHttpRequest.GetUri());
 }
+
+TEST_F(HttpRequestTest, RequestHasDataErrors_GET_WithData) {
+    std::string verb("GET");
+    std::string data("Test Data");
+    
+    MockHttpRequest mockHttpRequest;
+    EXPECT_TRUE(mockHttpRequest.RequestHasDataErrors(verb, data));
+    EXPECT_EQ(400, mockHttpRequest.GetBadRequestReturnCode());
+}
+
+TEST_F(HttpRequestTest, RequestHasDataErrors_POST_WithNoData) {
+    std::string verb("POST");
+    std::string emptyData("");
+    
+    MockHttpRequest mockHttpRequest;
+    EXPECT_TRUE(mockHttpRequest.RequestHasDataErrors(verb, emptyData));
+    EXPECT_EQ(400, mockHttpRequest.GetBadRequestReturnCode());
+}
+
+TEST_F(HttpRequestTest, RequestHasDataErrors_DELETE_WithData) {
+    std::string verb("DELETE");
+    std::string data("Test Data");
+    
+    MockHttpRequest mockHttpRequest;
+    EXPECT_TRUE(mockHttpRequest.RequestHasDataErrors(verb, data));
+    EXPECT_EQ(400, mockHttpRequest.GetBadRequestReturnCode());
+}
+
+TEST_F(HttpRequestTest, RequestHasDataErrors_GET_NoData) {
+    std::string verb("GET");
+    std::string emptyData("");
+    
+    MockHttpRequest mockHttpRequest;
+    EXPECT_FALSE(mockHttpRequest.RequestHasDataErrors(verb, emptyData));
+}
+
+TEST_F(HttpRequestTest, RequestHasDataErrors_DELETE_NoData) {
+    std::string verb("DELETE");
+    std::string emptyData("");
+    
+    MockHttpRequest mockHttpRequest;
+    EXPECT_FALSE(mockHttpRequest.RequestHasDataErrors(verb, emptyData));
+}
+
+TEST_F(HttpRequestTest, RequestHasDataErrors_POST_WithData) {
+    std::string verb("POST");
+    std::string emptyData("Test Data");
+    
+    MockHttpRequest mockHttpRequest;
+    EXPECT_FALSE(mockHttpRequest.RequestHasDataErrors(verb, emptyData));
+}

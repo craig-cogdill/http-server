@@ -9,6 +9,7 @@ public:
 
     bool IsValid();
     int GetBadRequestReturnCode();
+    
     std::string GetVerb();
     std::string GetData();
     std::string GetUri();
@@ -18,7 +19,6 @@ public:
 
     bool ParseHeaders(std::vector<std::string> headers, int start, int end);
     size_t GetRequestEmptyLineIndex(std::vector<std::string> requestLines);
-    bool RequestHasDataErrors(const std::string& verb, const size_t& requestSize, const size_t& emptyStringIdx);
     std::vector<std::string> Explode(std::string& s, char delim);
 
 
@@ -27,6 +27,7 @@ protected:
     HttpRequest();
 
     std::vector<std::string> GetLinesOfRawRequestAndCacheData(const char* rawRequest);
+    bool RequestHasDataErrors(const std::string& verb, const std::string& requestData);
     
     std::string mVerb;
     std::string mUri;

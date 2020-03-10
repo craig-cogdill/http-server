@@ -6,8 +6,6 @@
 #include <string.h>
 #include <cstring>
 
-
-
 HttpRequest::HttpRequest(const char* rawRequest):
     mVerb(""),
     mUri(""),
@@ -170,16 +168,16 @@ size_t HttpRequest::GetRequestEmptyLineIndex(std::vector<std::string> requestLin
     return std::distance(requestLines.begin(), std::find(requestLines.begin(), requestLines.end(), ""));
 }
     
-bool HttpRequest::RequestHasDataErrors(const std::string& verb, const size_t& requestSize, const size_t& emptyStringIdx) {
-    if ("GET" == verb && emptyStringIdx != requestSize-1) {
+bool HttpRequest::RequestHasDataErrors(const std::string& verb, const std::string& requestData) {
+    if ("GET" == verb && !requestData.empty()) {
     // A GET request can have headers, but no data
         kBadRequestReturnValue = 400;
         return true;
-    } else if ("DELETE" == verb && emptyStringIdx > 1) {
+    } else if ("DELETE" == verb && !requestData.empty()) {
     // A DELETE request can have no additional headers or data
         kBadRequestReturnValue = 400;
         return true;
-    } else if ("POST" == verb && emptyStringIdx == requestSize-1) {
+    } else if ("POST" == verb && requestData.empty()) {
     // A POST request must have data
         kBadRequestReturnValue = 400;
         return true;
