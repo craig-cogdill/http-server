@@ -7,6 +7,7 @@ public:
     HttpRequest(const char* rawRequest);
     virtual ~HttpRequest() = default;
 
+    bool IsEmpty();
     bool IsValid();
     int GetBadRequestReturnCode();
     
@@ -41,4 +42,5 @@ protected:
     std::string mContentTypeKey;
     std::string mContentLengthKey;
     std::string mHeaderDelimiter;
+    bool mEmpty;
 };

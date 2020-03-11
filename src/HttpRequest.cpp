@@ -19,14 +19,20 @@ HttpRequest::HttpRequest(const char* rawRequest):
     kBadRequestReturnValue(404),
     mContentTypeKey("Content-Type"),
     mContentLengthKey("Content-Length"),
-    mHeaderDelimiter(": ") {
-    std::vector<std::string> requestLines = GetLinesOfRawRequestAndCacheData(rawRequest);
-    if (!requestLines.empty()) {
-        std::string firstLine = requestLines.at(0);
-        requestLines.erase(requestLines.begin());
-        mValid = CacheFirstLineRequestArgs(firstLine)
-            && !RequestHasDataErrors(GetVerb(), GetData())
-            && CacheHeaders(requestLines);
+    mHeaderDelimiter(": "),
+    mEmpty(true) {
+    if (nullptr != rawRequest && rawRequest[0] != '\0') {
+        mEmpty = false;
+        std::vector<std::string> requestLines = GetLinesOfRawRequestAndCacheData(rawRequest);
+        if (!requestLines.empty()) {
+            std::string firstLine = requestLines.at(0);
+            requestLines.erase(requestLines.begin());
+            mValid = CacheFirstLineRequestArgs(firstLine)
+                && !RequestHasDataErrors(GetVerb(), GetData())
+                && CacheHeaders(requestLines);
+        }
+    } else {
+
     }
 }
 
@@ -43,12 +49,17 @@ HttpRequest::HttpRequest():
     kBadRequestReturnValue(404),
     mContentTypeKey("Content-Type"),
     mContentLengthKey("Content-Length"),
-    mHeaderDelimiter(": ") {
+    mHeaderDelimiter(": "),
+    mEmpty(true) {
 }
 
 bool HttpRequest::IsValid() {
     return mValid;
 }    
+
+bool HttpRequest::IsEmpty() {
+    return mEmpty;
+}
 
 std::string HttpRequest::GetVerb() {
     return mVerb;

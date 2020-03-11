@@ -27,11 +27,15 @@ int main(int argc, char *argv[]) {
 
    while (0 == gContinueRunning) {
       HttpRequest request = requestServerPtr->ReadFromSocket();
-      if (!request.GetVerb().empty()) {
-         std::cout << "====================================" << std::endl;
-         //std::cout << message << std::endl;
-         //std::cout << "====================================" << std::endl;
+      if (!request.IsEmpty()) {
+         std::string response = requestServerPtr->HandleRequest(request);
+         std::cout << "==============================" << std::endl;
+         std::cout << response << std::endl;
+         std::cout << "==============================" << std::endl;
       }
+
+      // A small sleep will be a significant CPU saver when no
+      //   connection is present on the socket
       std::this_thread::sleep_for(std::chrono::milliseconds(1));
    }
 
