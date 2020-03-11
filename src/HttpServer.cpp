@@ -6,7 +6,6 @@
 #include <memory>
 #include <cerrno>
 #include <fcntl.h>
-#include "HttpRequest.h"
 
 std::unique_ptr<HttpServer> HttpServer::Create() {
     std::unique_ptr<HttpServer> httpServerPtr(new HttpServer);
@@ -49,7 +48,31 @@ bool HttpServer::InitializeSocket() {
     return true;
 }
 
-std::string HttpServer::ReadFromSocket(char* buf) {
+HttpRequest HttpServer::ReadFromSocket() {
+    char buffer[30000] = {0};
+    long bytesRead(0);
+    socklen_t socketAddrLen = sizeof(mSocketAddr);
+    int newSocket = Accept(mSocketFd, reinterpret_cast<sockaddr*>(&mSocketAddr), &socketAddrLen);
+
+    // errno will be set to EAGAIN or EWOULDBLOCK if there are no pending
+    //      socket connections. Both must be checked for portability.
+    if (!(errno == EAGAIN || errno == EWOULDBLOCK)) {
+        if (newSocket < 0) {
+            std::cerr << "Error reading from socket: " << newSocket << std::endl;
+            close(newSocket);
+            exit(EXIT_FAILURE);
+        } else {
+            bytesRead = Read(newSocket, buffer, 30000);
+            if (0 == bytesRead) {
+                std::cerr << "HTTP Server received an unexpectedly empty message." << std::endl;
+            }
+        }
+    }
+    close(newSocket);
+    return HttpRequest(&buffer[0]);
+}
+
+/*std::string HttpServer::ReadFromSocket(char* buf) {
     std::string toReturn{""};
 
     socklen_t socketAddrLen = sizeof(mSocketAddr);
@@ -66,7 +89,8 @@ std::string HttpServer::ReadFromSocket(char* buf) {
             char buffer[30000] = {0};
             long valread = read(newSocket, buf, 30000);
             if (valread > 0) {
-                /*std::cout << buf << std::endl;
+                ////////////////
+                std::cout << buf << std::endl;
                 for (int i = 0; i < valread; i++) {
                     if (buf[i] == '\r') {
                         std::cout << "Found carriage return: " << i << std::endl;
@@ -83,7 +107,7 @@ std::string HttpServer::ReadFromSocket(char* buf) {
                 std::cout << "secondWord: **" << nextWord << "**" << std::endl;
                 char* thirdWord = strtok(NULL, delim.c_str());
                 std::cout << "thirdWord: **" << thirdWord << "**" << std::endl;
-                */
+                ///////
                 HttpRequest request(buf);
                 toReturn = std::string(&buffer[0], valread);
             }
@@ -91,7 +115,7 @@ std::string HttpServer::ReadFromSocket(char* buf) {
     }
     close(newSocket);
     return toReturn;
-}
+}*/
 
 // System call wrappers
 
@@ -117,4 +141,88 @@ int HttpServer::Accept(int sockfd, struct sockaddr* addr, socklen_t* addrlen) {
 
 ssize_t HttpServer::Read(int fd, void* buf, size_t count) {
     return read(fd, buf, count);
+}
+    
+std::string HttpServer::GetResponseFromError(int errorCode) {
+    std::string responseString("HTTP/1.1 ");
+    switch (errorCode) {
+    case 400:
+        responseString += "400 Bad Request";
+        break;
+    case 404:
+        responseString += "404 Not Found";
+        break;
+    case 405:
+        responseString += "405 Method Not Allowed";
+        break;
+    default:
+        responseString += "500 Internal Server Error";
+        break;
+    }
+    return responseString+mCRLF;
+}
+    
+std::string HttpServer::HandleRequest(HttpRequest& httpRequest) {
+    std::string response("");
+    if (!httpRequest.IsValid()) {
+        response = GetResponseFromError(httpRequest.GetBadRequestReturnCode());
+    } else {
+        if ("GET" == httpRequest.GetVerb()) { 
+            // Handle GET
+        } else if ("POST" == httpRequest.GetVerb()) {
+            // Handle POST
+
+        } else if ("DELETE" == httpRequest.GetVerb()) {
+            // Handle DELETE
+        }
+    }
+    return response;
+}
+    
+std::string HttpServer::HandleGetRequest(const std::string& uri) {
+    std::string response("");
+    if (mDatabase.find(uri) == mDatabase.end()) {
+        response = GetResponseFromError(404);
+    } else {
+        // This call would usually be wrapped in a try{}catch{} since it throws.
+        //    However, this server handles requests sequentially on a single socket,
+        //    at this point, it has been confirmed the data exists in the table.
+        //    It is impossible for it to be overwritten before this call, so this is safe. 
+        DataTuple dataTuple = mDatabase.at(uri);
+
+        // This is the only point in the server where headers and data
+        //   need to be returned, so it is built into this function,
+        //   rather than being in it's own function
+        response += "HTTP/1.1 200 OK"+mCRLF;
+        std::string contentType = std::get<0>(dataTuple);
+        std::string contentLength = std::get<1>(dataTuple);
+        std::string data = std::get<2>(dataTuple);
+        if (!contentType.empty()) {
+            response += "Content-Type: "+contentType+mCRLF;
+        }
+        if (!contentLength.empty()) {
+            response += "Content-Length: "+contentLength+mCRLF;
+        }
+        response += mCRLF+mCRLF;
+        response += data+mCRLF;
+    }
+    return response;    
+}
+
+std::string HttpServer::HandleDeleteRequest(const std::string& uri) {
+    std::string response("");
+    auto dbEntryItr = mDatabase.find(uri);
+    if (mDatabase.end() == dbEntryItr) {
+        response = GetResponseFromError(404);
+    } else {
+        mDatabase.erase(dbEntryItr);
+        response = "HTTP/1.1 200 OK"+mCRLF;
+    }
+    return response;    
+}
+    
+std::string HttpServer::HandlePostRequest(HttpRequest& request) {
+    DataTuple dataTuple = std::make_tuple(request.GetContentType(), request.GetContentLength(), request.GetData());
+    mDatabase[request.GetUri()] = dataTuple;
+    return std::string("HTTP/1.1 200 OK"+mCRLF);
 }

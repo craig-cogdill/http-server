@@ -1,7 +1,7 @@
 #include "HttpServer.h"
 
 /*
-    This class exists to test the HttpServer class member functions.
+    This class exists to help test the HttpServer class member functions.
     For the sake of unit tests, an actual socket should not be created.
     To avoid this, the HttpServer::Setup() function is not called as part
     of MockHttpServer instantiation. It will be explicitly called in tests
@@ -18,6 +18,46 @@ public:
     bool InitializeSocket() override {
         return HttpServer::InitializeSocket();
     }
+
+    std::string GetResponseFromError(int errorCode) override {
+        return HttpServer::GetResponseFromError(errorCode);
+    }
+
+    std::string HandleGetRequest(const std::string& uri) override {
+        return HttpServer::HandleGetRequest(uri);
+    }
+    
+    std::string HandleDeleteRequest(const std::string& uri) override {
+        return HttpServer::HandleDeleteRequest(uri);
+    }
+    
+    std::string HandlePostRequest(HttpRequest& request) override {
+        return HttpServer::HandlePostRequest(request);
+    }
+    
+    // Mock-specific functions
+
+    void AddEntryToDatabase(const std::string& uri, const std::string& contentType,
+        const std::string& contentLength, const std::string& data) {
+        DataTuple dataTuple = std::make_tuple(contentType, contentLength, data);
+
+        mDatabase[uri] = dataTuple;
+    }
+
+    std::string GetDataFromDatabase(const std::string& uri) {
+        std::string data("");
+        if (mDatabase.find(uri) != mDatabase.end()) {
+            DataTuple dataTuple = mDatabase.at(uri);
+            data = std::get<2>(dataTuple);
+        }
+        return data;
+    }
+
+    size_t GetDatabaseSize() {
+        return mDatabase.size();
+    }
+
+    // System call overrides
 
     int Socket(int domain, int type, int protocol) override {
         return mSocketRetVal;
@@ -41,6 +81,9 @@ public:
     }
     
     ssize_t Read(int fd, void* buf, size_t count) override {
+        if (mSetBufferInRead) {
+            strcpy(static_cast<char*>(buf), mReadBufferRetVal.c_str());
+        }
         return mReadRetVal;
     }
 
@@ -58,4 +101,6 @@ public:
     ssize_t mReadRetVal{1};
 
     int mErrnoRetVal{0};
+    bool mSetBufferInRead{false};
+    std::string mReadBufferRetVal{""};
 };
