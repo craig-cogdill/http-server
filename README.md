@@ -1,5 +1,15 @@
 # http-server
 
+
+TODO:
+- Unit test HttpRequest::IsEmpty();
+- Finish sending the valid response on the socket
+- Check code for uniform std::string() operators versus {}
+- Check all code for places where const or pass-by-reference could be used
+- Remove virtual functionality from functions that do not need it in MockHttpServer and MockHttpRequest
+- Flesh out the README
+
+
 Design Decisions:
 - Easy to build and run
 - Use only C code and the C++ STL for production code
