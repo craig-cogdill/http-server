@@ -284,3 +284,91 @@ TEST_F(HttpServerTest, HandlePOST_EntryOverwritten) {
     EXPECT_EQ(expectedDbSize, mockHttpServer->GetDatabaseSize());
     EXPECT_EQ(data, mockHttpServer->GetDataFromDatabase(uri));
 }
+
+TEST_F(HttpServerTest, HandleRequest_GET_ReturnValidData) {
+    std::unique_ptr<MockHttpServer> mockHttpServer = MockHttpServer::Create();
+    EXPECT_NE(nullptr, mockHttpServer);
+
+    // build test data
+    std::string uri("/test/uri");
+    std::string contentType("text/plain");
+    std::string data("Hello World!");
+    std::string contentLength(std::to_string(data.length()));
+    MockHttpRequest mockHttpRequest;
+    mockHttpRequest.SetVerb("GET");
+    mockHttpRequest.SetUri(uri);
+    mockHttpRequest.SetContentType(contentType);
+    mockHttpRequest.SetContentLength(contentLength);
+    mockHttpRequest.SetData(data);
+
+    // add the data to the database
+    mockHttpServer->AddEntryToDatabase(uri, contentType, contentLength, data);
+    size_t expectedDbSize(1);
+    EXPECT_EQ(expectedDbSize, mockHttpServer->GetDatabaseSize());
+
+    // build expected response
+    std::string goodResponseHeader("HTTP/1.1 200 OK"+gCRLF);
+    std::string headers("Content-Type: "+contentType+gCRLF+"Content-Length: "+contentLength+gCRLF);
+    std::string expectedResponse(goodResponseHeader+headers+gCRLF+gCRLF+data+gCRLF);
+
+    EXPECT_EQ(expectedResponse, mockHttpServer->HandleRequest(mockHttpRequest));
+}
+
+TEST_F(HttpServerTest, HandleRequest_POST_EntryAdded) {
+    std::unique_ptr<MockHttpServer> mockHttpServer = MockHttpServer::Create();
+    EXPECT_NE(nullptr, mockHttpServer);
+
+    // database is empty before POST
+    size_t emptyDbSize(0);
+    EXPECT_EQ(emptyDbSize, mockHttpServer->GetDatabaseSize());
+
+    // build test data
+    std::string uri("/test/uri");
+    std::string contentType("text/plain");
+    std::string data("Hello World!");
+    std::string contentLength(std::to_string(data.length()));
+    MockHttpRequest mockHttpRequest;
+    mockHttpRequest.SetVerb("POST");
+    mockHttpRequest.SetUri(uri);
+    mockHttpRequest.SetContentType(contentType);
+    mockHttpRequest.SetContentLength(contentLength);
+    mockHttpRequest.SetData(data);
+
+    std::string expectedResponse("HTTP/1.1 200 OK"+gCRLF);
+    EXPECT_EQ(expectedResponse, mockHttpServer->HandleRequest(mockHttpRequest));
+
+    // one entry in the database
+    size_t expectedDbSize(1);
+    EXPECT_EQ(expectedDbSize, mockHttpServer->GetDatabaseSize());
+    EXPECT_EQ(data, mockHttpServer->GetDataFromDatabase(uri));
+}
+
+TEST_F(HttpServerTest, HandleRequest_DELETE_ValidDataDeleted) {
+    std::unique_ptr<MockHttpServer> mockHttpServer = MockHttpServer::Create();
+    EXPECT_NE(nullptr, mockHttpServer);
+
+    // build test data
+    std::string uri("/test/uri");
+    std::string contentType("text/plain");
+    std::string data("Hello World!");
+    std::string contentLength(std::to_string(data.length()));
+    MockHttpRequest mockHttpRequest;
+    mockHttpRequest.SetVerb("DELETE");
+    mockHttpRequest.SetUri(uri);
+    mockHttpRequest.SetContentType(contentType);
+    mockHttpRequest.SetContentLength(contentLength);
+    mockHttpRequest.SetData(data);
+
+    // add data to database ahead of delete
+    mockHttpServer->AddEntryToDatabase(uri, contentType, contentLength, data);
+    size_t expectedDbSize(1);
+    EXPECT_EQ(expectedDbSize, mockHttpServer->GetDatabaseSize());
+
+    // build expected response
+    std::string expectedResponse("HTTP/1.1 200 OK"+gCRLF);
+    EXPECT_EQ(expectedResponse, mockHttpServer->HandleRequest(mockHttpRequest));
+
+    // Expect that the database is empty
+    size_t expectedEmptyDbSize(0);
+    EXPECT_EQ(expectedEmptyDbSize, mockHttpServer->GetDatabaseSize());
+}

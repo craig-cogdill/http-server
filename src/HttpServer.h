@@ -15,7 +15,7 @@ public:
     virtual ~HttpServer();
 
     HttpRequest ReadFromSocket();
-    std::string HandleRequest(HttpRequest& httpRequest);
+    std::string HandleRequest(HttpRequest& request);
 
 protected:
     HttpServer():

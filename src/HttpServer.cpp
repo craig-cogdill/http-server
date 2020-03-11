@@ -162,18 +162,17 @@ std::string HttpServer::GetResponseFromError(int errorCode) {
     return responseString+mCRLF;
 }
     
-std::string HttpServer::HandleRequest(HttpRequest& httpRequest) {
+std::string HttpServer::HandleRequest(HttpRequest& request) {
     std::string response("");
-    if (!httpRequest.IsValid()) {
-        response = GetResponseFromError(httpRequest.GetBadRequestReturnCode());
+    if (!request.IsValid()) {
+        response = GetResponseFromError(request.GetBadRequestReturnCode());
     } else {
-        if ("GET" == httpRequest.GetVerb()) { 
-            // Handle GET
-        } else if ("POST" == httpRequest.GetVerb()) {
-            // Handle POST
-
-        } else if ("DELETE" == httpRequest.GetVerb()) {
-            // Handle DELETE
+        if ("GET" == request.GetVerb()) { 
+            response = HandleGetRequest(request.GetUri());
+        } else if ("POST" == request.GetVerb()) {
+            response = HandlePostRequest(request);
+        } else if ("DELETE" == request.GetVerb()) {
+            response = HandleDeleteRequest(request.GetUri());
         }
     }
     return response;
