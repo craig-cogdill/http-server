@@ -108,8 +108,8 @@ std::string HttpServer::HandleGetRequest(const std::string& uri) {
         response = GetResponseFromError(404);
     } else {
         // This call would usually be wrapped in a try{}catch{} since it throws.
-        //    However, this server handles requests sequentially on a single socket,
-        //    at this point, it has been confirmed the data exists in the table.
+        //    However, this server handles requests sequentially on a single socket.
+        //    At this point it has been confirmed the data exists in the table.
         //    It is impossible for it to be overwritten before this call, so this is safe. 
         DataTuple dataTuple = mDatabase.at(uri);
 
@@ -120,13 +120,16 @@ std::string HttpServer::HandleGetRequest(const std::string& uri) {
         std::string contentType = std::get<0>(dataTuple);
         std::string contentLength = std::get<1>(dataTuple);
         std::string data = std::get<2>(dataTuple);
+        bool anyHeaderPresent(false);
         if (!contentType.empty()) {
             response += "Content-Type: "+contentType+mCRLF;
+            anyHeaderPresent = true;
         }
         if (!contentLength.empty()) {
             response += "Content-Length: "+contentLength+mCRLF;
+            anyHeaderPresent = true;
         }
-        response += mCRLF+mCRLF;
+        response += anyHeaderPresent? mCRLF : mCRLF+mCRLF;
         response += data+mCRLF;
     }
     return response;    

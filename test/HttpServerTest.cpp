@@ -125,7 +125,9 @@ TEST_F(HttpServerTest, HandleGET_ReturnValidData) {
     // build expected response
     std::string goodResponseHeader("HTTP/1.1 200 OK"+gCRLF);
     std::string headers("Content-Type: "+contentType+gCRLF+"Content-Length: "+contentLength+gCRLF);
-    std::string expectedResponse(goodResponseHeader+headers+gCRLF+gCRLF+data+gCRLF);
+    
+    // Single CRLF between headers and data since one is written to the headers
+    std::string expectedResponse(goodResponseHeader+headers+gCRLF+data+gCRLF);
 
     EXPECT_EQ(expectedResponse, mockHttpServer->HandleGetRequest(uri));
 }
@@ -264,7 +266,9 @@ TEST_F(HttpServerTest, HandleRequestAndGenerateResponse_GET_ReturnValidData) {
     // build expected response
     std::string goodResponseHeader("HTTP/1.1 200 OK"+gCRLF);
     std::string headers("Content-Type: "+contentType+gCRLF+"Content-Length: "+contentLength+gCRLF);
-    std::string expectedResponse(goodResponseHeader+headers+gCRLF+gCRLF+data+gCRLF);
+    
+    // Single CRLF between headers and data since one is written to the headers
+    std::string expectedResponse(goodResponseHeader+headers+gCRLF+data+gCRLF);
 
     EXPECT_EQ(expectedResponse, mockHttpServer->HandleRequestAndGenerateResponse(mockHttpRequest));
 }

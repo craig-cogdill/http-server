@@ -10,6 +10,8 @@ TODO:
 - Remove virtual functionality from functions that do not need it in MockHttpServer and MockHttpRequest
 - Flesh out the README
 
+How to build and run:
+- Listening for connections on port 8000
 
 Design Decisions:
 - Easy to build and run
