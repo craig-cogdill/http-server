@@ -19,21 +19,26 @@ public:
         return HttpServer::InitializeSocket();
     }
 
-    std::string GetResponseFromError(int errorCode) override {
-        return HttpServer::GetResponseFromError(errorCode);
+    std::string HandleRequestAndGenerateResponse(HttpRequest& request) {
+        return HttpServer::HandleRequestAndGenerateResponse(request);
     }
 
-    std::string HandleGetRequest(const std::string& uri) override {
+    std::string HandleGetRequest(const std::string& uri) {
         return HttpServer::HandleGetRequest(uri);
     }
     
-    std::string HandleDeleteRequest(const std::string& uri) override {
+    std::string HandleDeleteRequest(const std::string& uri) {
         return HttpServer::HandleDeleteRequest(uri);
     }
     
-    std::string HandlePostRequest(HttpRequest& request) override {
+    std::string HandlePostRequest(HttpRequest& request) {
         return HttpServer::HandlePostRequest(request);
     }
+
+    std::string GetResponseFromError(int errorCode) {
+        return HttpServer::GetResponseFromError(errorCode);
+    }
+
     
     // Mock-specific functions
 
@@ -87,6 +92,14 @@ public:
         return mReadRetVal;
     }
 
+    ssize_t Write(int fd, const void* buf, size_t count) override {
+        return count;
+    }
+
+    int Close(int fildes) override {
+        return mCloseRetVal;
+    }
+
     // Return variables for targeting mocking of system calls
     //    All variables defaulted to 'happy path' return values
     //
@@ -99,6 +112,7 @@ public:
     int mFcntlRetVal{0};
     int mAcceptRetVal{0};
     ssize_t mReadRetVal{1};
+    int mCloseRetVal{0};
 
     int mErrnoRetVal{0};
     bool mSetBufferInRead{false};

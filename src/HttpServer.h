@@ -14,8 +14,7 @@ public:
     static std::unique_ptr<HttpServer> Create();
     virtual ~HttpServer();
 
-    HttpRequest ReadFromSocket();
-    std::string HandleRequest(HttpRequest& request);
+    void ProcessRequest();
 
 protected:
     HttpServer():
@@ -26,10 +25,11 @@ protected:
     };
 
     virtual bool InitializeSocket();
-    virtual std::string GetResponseFromError(int errorCode);
-    virtual std::string HandleGetRequest(const std::string& uri);
-    virtual std::string HandleDeleteRequest(const std::string& uri);
-    virtual std::string HandlePostRequest(HttpRequest& request);
+    std::string HandleRequestAndGenerateResponse(HttpRequest& request);
+    std::string HandleGetRequest(const std::string& uri);
+    std::string HandleDeleteRequest(const std::string& uri);
+    std::string HandlePostRequest(HttpRequest& request);
+    std::string GetResponseFromError(int errorCode);
 
     // System call wrappers
     virtual int Socket(int domain, int type, int protocol);
@@ -38,6 +38,8 @@ protected:
     virtual int Fcntl(int fd, int cmd, int val);
     virtual int Accept(int sockfd, struct sockaddr* addr, socklen_t* addrlen);
     virtual ssize_t Read(int fd, void* buf, size_t count);
+    virtual ssize_t Write(int fd, const void* buf, size_t count);
+    virtual int Close(int fildes);
 
     std::unordered_map<std::string, DataTuple> mDatabase;
 

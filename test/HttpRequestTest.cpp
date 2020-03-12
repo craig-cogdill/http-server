@@ -340,3 +340,27 @@ TEST_F(HttpRequestTest, FullRequestTest) {
     HttpRequest httpRequest(rawRequest);
     EXPECT_TRUE(httpRequest.IsValid());
 }
+
+TEST_F(HttpRequestTest, IsEmpty_True) {
+    MockHttpRequest mockHttpRequest;
+    EXPECT_TRUE(mockHttpRequest.IsEmpty());
+}
+
+TEST_F(HttpRequestTest, IsEmpty_False_ValidRequest) {
+    const char* rawRequest ="POST /test/uri HTTP/1.1\r\n"
+                            "Content-Type: application/json\r\n"
+                            "Content-Length: 20\r\n\r\n"
+                            "{\"hello\": \"world\"}";
+    
+    HttpRequest httpRequest(rawRequest);
+    EXPECT_TRUE(httpRequest.IsValid());
+    EXPECT_FALSE(httpRequest.IsEmpty());
+}
+
+TEST_F(HttpRequestTest, IsEmpty_False_InvalidRequest) {
+    const char* rawRequest ="PUT /test/uri\r\n";
+    
+    HttpRequest httpRequest(rawRequest);
+    EXPECT_FALSE(httpRequest.IsValid());
+    EXPECT_FALSE(httpRequest.IsEmpty());
+}

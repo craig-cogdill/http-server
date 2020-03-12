@@ -21,7 +21,9 @@ HttpRequest::HttpRequest(const char* rawRequest):
     mContentLengthKey("Content-Length"),
     mHeaderDelimiter(": "),
     mEmpty(true) {
+    //std::cout << "Inside constructor" << std::endl;
     if (nullptr != rawRequest && rawRequest[0] != '\0') {
+        //std::cout << "Setting empty false" << std::endl;
         mEmpty = false;
         std::vector<std::string> requestLines = GetLinesOfRawRequestAndCacheData(rawRequest);
         if (!requestLines.empty()) {
@@ -31,9 +33,8 @@ HttpRequest::HttpRequest(const char* rawRequest):
                 && !RequestHasDataErrors(GetVerb(), GetData())
                 && CacheHeaders(requestLines);
         }
-    } else {
-
     }
+    //std::cout << "Leaving constructor" << std::endl;
 }
 
 HttpRequest::HttpRequest():

@@ -2,7 +2,6 @@
 
 
 TODO:
-- Unit test HttpRequest::IsEmpty();
 - Finish sending the valid response on the socket
 - Check code for uniform std::string() operators versus {}
 - Check all code for places where const or pass-by-reference could be used

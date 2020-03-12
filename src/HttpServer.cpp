@@ -48,74 +48,35 @@ bool HttpServer::InitializeSocket() {
     return true;
 }
 
-HttpRequest HttpServer::ReadFromSocket() {
+void HttpServer::ProcessRequest() {
     char buffer[30000] = {0};
     long bytesRead(0);
     socklen_t socketAddrLen = sizeof(mSocketAddr);
-    int newSocket = Accept(mSocketFd, reinterpret_cast<sockaddr*>(&mSocketAddr), &socketAddrLen);
+    int openConnection = Accept(mSocketFd, reinterpret_cast<sockaddr*>(&mSocketAddr), &socketAddrLen);
 
     // errno will be set to EAGAIN or EWOULDBLOCK if there are no pending
     //      socket connections. Both must be checked for portability.
     if (!(errno == EAGAIN || errno == EWOULDBLOCK)) {
-        if (newSocket < 0) {
-            std::cerr << "Error reading from socket: " << newSocket << std::endl;
-            close(newSocket);
+        if (openConnection < 0) {
+            std::cerr << "Error reading from socket: " << openConnection << std::endl;
+            Close(openConnection);
             exit(EXIT_FAILURE);
         } else {
-            bytesRead = Read(newSocket, buffer, 30000);
+            bytesRead = Read(openConnection, buffer, 30000);
             if (0 == bytesRead) {
                 std::cerr << "HTTP Server received an unexpectedly empty message." << std::endl;
-            }
-        }
-    }
-    close(newSocket);
-    return HttpRequest(&buffer[0]);
-}
-
-/*std::string HttpServer::ReadFromSocket(char* buf) {
-    std::string toReturn{""};
-
-    socklen_t socketAddrLen = sizeof(mSocketAddr);
-    int newSocket = Accept(mSocketFd, reinterpret_cast<sockaddr*>(&mSocketAddr), &socketAddrLen);
-
-    // errno will be set to EAGAIN or EWOULDBLOCK if there are no pending
-    //      socket connections. Both must be checked for portability.
-    if (!(errno == EAGAIN || errno == EWOULDBLOCK)) {
-        if (newSocket < 0) {
-            std::cerr << "Error reading from socket: " << newSocket << std::endl;
-            close(newSocket);
-            exit(EXIT_FAILURE);
-        } else {
-            char buffer[30000] = {0};
-            long valread = read(newSocket, buf, 30000);
-            if (valread > 0) {
-                ////////////////
-                std::cout << buf << std::endl;
-                for (int i = 0; i < valread; i++) {
-                    if (buf[i] == '\r') {
-                        std::cout << "Found carriage return: " << i << std::endl;
-                    }
-                    if (buf[i] == '\n') {
-                        std::cout << "Found newline: " << i << std::endl;
-                    }
+            } else {
+                HttpRequest request(&buffer[0]);
+                std::string response = HandleRequestAndGenerateResponse(request);
+                ssize_t bytesWritten = Write(openConnection, response.c_str(), strlen(response.c_str()));
+                if (bytesWritten <= 0) {
+                    std::cerr << "Failed to send response to client" << std::endl;
                 }
-                std::string delim{"\r\n"};
-                char* firstWord = strtok(buf, delim.c_str());
-                std::cout << "Valread: " << valread << std::endl;
-                std::cout << "firstWord: **" << firstWord << "**" << std::endl;
-                char* nextWord = strtok(NULL, delim.c_str());
-                std::cout << "secondWord: **" << nextWord << "**" << std::endl;
-                char* thirdWord = strtok(NULL, delim.c_str());
-                std::cout << "thirdWord: **" << thirdWord << "**" << std::endl;
-                ///////
-                HttpRequest request(buf);
-                toReturn = std::string(&buffer[0], valread);
             }
         }
     }
-    close(newSocket);
-    return toReturn;
-}*/
+    Close(openConnection);
+}
 
 // System call wrappers
 
@@ -143,6 +104,14 @@ ssize_t HttpServer::Read(int fd, void* buf, size_t count) {
     return read(fd, buf, count);
 }
     
+ssize_t HttpServer::Write(int fd, const void* buf, size_t count) {
+    return write(fd, buf, count);
+}
+    
+int HttpServer::Close(int fildes) {
+    return close(fildes);
+}
+    
 std::string HttpServer::GetResponseFromError(int errorCode) {
     std::string responseString("HTTP/1.1 ");
     switch (errorCode) {
@@ -162,7 +131,7 @@ std::string HttpServer::GetResponseFromError(int errorCode) {
     return responseString+mCRLF;
 }
     
-std::string HttpServer::HandleRequest(HttpRequest& request) {
+std::string HttpServer::HandleRequestAndGenerateResponse(HttpRequest& request) {
     std::string response("");
     if (!request.IsValid()) {
         response = GetResponseFromError(request.GetBadRequestReturnCode());
