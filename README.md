@@ -2,12 +2,7 @@
 
 
 TODO:
-- Investigate the newline printed in POST/GET
-- Make the Accept call blocking
-- Remove all mocked system calls, or unit test ProcessRequest
-- Remove the sleep from the while loop
 - Check all code for places where const or pass-by-reference could be used
-- Remove virtual functionality from functions that do not need it in MockHttpServer and MockHttpRequest
 - Flesh out the README
 
 How to build and run:

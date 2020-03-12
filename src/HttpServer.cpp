@@ -30,7 +30,7 @@ HttpServer::~HttpServer() {
 }
 
 bool HttpServer::InitializeSocket() {
-    if ((mSocketFd = Socket(AF_INET, SOCK_STREAM, 0)) == 0) {
+    if (0 == (mSocketFd = Socket(AF_INET, SOCK_STREAM, 0))) {
         std::cerr << "Failed to initialize socket" << std::endl;
         return false;
     }
@@ -64,9 +64,10 @@ void HttpServer::ProcessRequest() {
 
     // errno will be set to EAGAIN or EWOULDBLOCK if there are no pending
     //      socket connections. Both must be checked for portability.
-    if (!(errno == EAGAIN || errno == EWOULDBLOCK)) {
+    if (!(EAGAIN == errno || EWOULDBLOCK == errno)) {
         if (openConnection < 0) {
-            std::cerr << "Error reading from socket: " << openConnection << std::endl;
+            std::cerr << "Error reading from socket ("
+                      << openConnection << "): Cannot continue" <<  std::endl;
             Close(openConnection);
             exit(EXIT_FAILURE);
         } else {
@@ -107,15 +108,11 @@ std::string HttpServer::HandleGetRequest(const std::string& uri) {
     if (mDatabase.find(uri) == mDatabase.end()) {
         response = GetResponseFromError(404);
     } else {
-        // This call would usually be wrapped in a try{}catch{} since it throws.
-        //    However, this server handles requests sequentially on a single socket.
-        //    At this point it has been confirmed the data exists in the table.
-        //    It is impossible for it to be overwritten before this call, so this is safe. 
         DataTuple dataTuple = mDatabase.at(uri);
 
         // This is the only point in the server where headers and data
-        //   need to be returned, so it is built into this function,
-        //   rather than being in it's own function
+        //   need to be returned, so their construction is built into
+        //   this function, rather than being in its own function
         response += "HTTP/1.1 200 OK"+mCRLF;
         std::string contentType = std::get<0>(dataTuple);
         std::string contentLength = std::get<1>(dataTuple);

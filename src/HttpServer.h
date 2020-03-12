@@ -9,12 +9,20 @@ typedef std::tuple<std::string, std::string, std::string> DataTuple;
 
 class HttpServer {
 public:
+    // A factory function is the only mechanism for a user to instantiate an object
+    //   of this class. 
+    //
+    // InitializeSocket must always be called after object construction. To ensure
+    //   that the user does not forget to call it, it will be called in the factory
+    //   function after object construction. Should InitializeSocket fail, a nullptr
+    //   will be returned to the caller.
     static std::unique_ptr<HttpServer> Create();
     virtual ~HttpServer();
 
     void ProcessRequest();
 
 protected:
+    // This constructor is protected per the factory pattern
     HttpServer();
 
     bool InitializeSocket();
