@@ -20,7 +20,8 @@ HttpServer::HttpServer():
     mSocketFd(-1),
     mSocketAddr{},
     kPortNumber(8000),
-    mCRLF("\r\n") {
+    mCRLF("\r\n"),
+    kMaxBufferSize(1250000) { // 10MB transfers
 }
 
 HttpServer::~HttpServer() { 
@@ -57,7 +58,7 @@ bool HttpServer::InitializeSocket() {
 }
 
 void HttpServer::ProcessRequest() {
-    char buffer[30000] = {0};
+    char buffer[kMaxBufferSize] = {0};
     long bytesRead(0);
     socklen_t socketAddrLen = sizeof(mSocketAddr);
     int openConnection = Accept(mSocketFd, reinterpret_cast<sockaddr*>(&mSocketAddr), &socketAddrLen);
@@ -69,7 +70,7 @@ void HttpServer::ProcessRequest() {
             std::cerr << "Error reading from socket ("
                       << openConnection << "): Cannot continue" <<  std::endl;
             Close(openConnection);
-            exit(EXIT_FAILURE);
+            exit(-1);
         } else {
             bytesRead = Read(openConnection, buffer, 30000);
             if (0 == bytesRead) {

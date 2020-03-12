@@ -6,12 +6,10 @@
 
 namespace {
    volatile sig_atomic_t gContinueRunning(0);
-   int gExitCode(0);
 }
 
 void shutdownSignalHandler(int signalCode) {
    gContinueRunning = signalCode;
-   gExitCode = signalCode;
 }
 
 int main(int argc, char *argv[]) {
@@ -21,16 +19,17 @@ int main(int argc, char *argv[]) {
    std::unique_ptr<HttpServer> requestServerPtr = HttpServer::Create();
    if (nullptr == requestServerPtr) {
       std::cerr << "Failed to intialize HTTP Server. Cannot continue processing." << std::endl;
-      exit(-1);
+      return -1;
    }
 
    while (0 == gContinueRunning) {
       requestServerPtr->ProcessRequest();
 
       // A small sleep will be a significant CPU saver when no
-      //   connection is present on the socket
+      //   connection is present on the socket, since the call
+      //   to accept new connections is non-blocking
       std::this_thread::sleep_for(std::chrono::milliseconds(1));
    }
 
-   return gExitCode;
+   return 0;
 }

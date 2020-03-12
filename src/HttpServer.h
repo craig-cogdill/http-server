@@ -49,4 +49,5 @@ private:
     struct sockaddr_in mSocketAddr;
     uint16_t kPortNumber;
     const std::string mCRLF;
+    int kMaxBufferSize;
 };

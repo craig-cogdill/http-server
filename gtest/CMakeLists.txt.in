@@ -1,3 +1,7 @@
+# THE FOLLOWING SECTION IS DIRECTLY FROM THE GOOGLETEST DOCUMENTATION,
+# WHICH IS OPEN SOURCE. I DO NOT CLAIM IT AS MY OWN
+#
+# -- START SECTION -----------------------------------------------------------
 cmake_minimum_required(VERSION 3.0)
 
 project(googletest-download NONE)
@@ -13,3 +17,4 @@ ExternalProject_Add(googletest
   INSTALL_COMMAND   ""
   TEST_COMMAND      ""
 )
+# -- END SECTION -----------------------------------------------------------
