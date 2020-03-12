@@ -3,7 +3,7 @@
 
 TEST_F(HttpRequestTest, Explode_emptyString) {
     std::string emptyString("");
-    char delim{'\n'};
+    char delim('\n');
 
     MockHttpRequest mockHttpRequest;
     std::vector<std::string> explodedStr = mockHttpRequest.Explode(emptyString, delim);
@@ -11,10 +11,10 @@ TEST_F(HttpRequestTest, Explode_emptyString) {
 }
 
 TEST_F(HttpRequestTest, Explode_MultiLineString) {
-    std::string firstElement{"hello"};
-    std::string secondElement{"world"};
-    std::string testString{firstElement+"\n"+secondElement};
-    char delim{'\n'};
+    std::string firstElement("hello");
+    std::string secondElement("world");
+    std::string testString(firstElement+"\n"+secondElement);
+    char delim('\n');
 
     MockHttpRequest mockHttpRequest;
     std::vector<std::string> explodedStr = mockHttpRequest.Explode(testString, delim);
@@ -26,11 +26,11 @@ TEST_F(HttpRequestTest, Explode_MultiLineString) {
 }
 
 TEST_F(HttpRequestTest, Explode_MultipleEmptyLines) {
-    std::string firstElement{"hello"};
-    std::string secondElement{"world"};
-    std::string thirdElement{"test"};
-    std::string testString{firstElement+"\n"+secondElement+"\n\n"+thirdElement};
-    char delim{'\n'};
+    std::string firstElement("hello");
+    std::string secondElement("world");
+    std::string thirdElement("test");
+    std::string testString(firstElement+"\n"+secondElement+"\n\n"+thirdElement);
+    char delim('\n');
 
     MockHttpRequest mockHttpRequest;
     std::vector<std::string> explodedStr = mockHttpRequest.Explode(testString, delim);
@@ -43,10 +43,10 @@ TEST_F(HttpRequestTest, Explode_MultipleEmptyLines) {
 }
 
 TEST_F(HttpRequestTest, Explode_SpaceAsDelimiter) {
-    std::string firstElement{"hello"};
-    std::string secondElement{"world"};
-    std::string testString{firstElement+" "+secondElement};
-    char delim{' '};
+    std::string firstElement("hello");
+    std::string secondElement("world");
+    std::string testString(firstElement+" "+secondElement);
+    char delim(' ');
 
     MockHttpRequest mockHttpRequest;
     std::vector<std::string> explodedStr = mockHttpRequest.Explode(testString, delim);
@@ -58,10 +58,10 @@ TEST_F(HttpRequestTest, Explode_SpaceAsDelimiter) {
 }
 
 TEST_F(HttpRequestTest, Explode_SemiColonAsDelimiter) {
-    std::string firstElement{"User-Agent"};
-    std::string secondElement{" curl/7.35.0"};
-    std::string testString{firstElement+":"+secondElement};
-    char delim{':'};
+    std::string firstElement("User-Agent");
+    std::string secondElement(" curl/7.35.0");
+    std::string testString(firstElement+":"+secondElement);
+    char delim(':');
 
     MockHttpRequest mockHttpRequest;
     std::vector<std::string> explodedStr = mockHttpRequest.Explode(testString, delim);
@@ -339,28 +339,4 @@ TEST_F(HttpRequestTest, FullRequestTest) {
     
     HttpRequest httpRequest(rawRequest);
     EXPECT_TRUE(httpRequest.IsValid());
-}
-
-TEST_F(HttpRequestTest, IsEmpty_True) {
-    MockHttpRequest mockHttpRequest;
-    EXPECT_TRUE(mockHttpRequest.IsEmpty());
-}
-
-TEST_F(HttpRequestTest, IsEmpty_False_ValidRequest) {
-    const char* rawRequest ="POST /test/uri HTTP/1.1\r\n"
-                            "Content-Type: application/json\r\n"
-                            "Content-Length: 20\r\n\r\n"
-                            "{\"hello\": \"world\"}";
-    
-    HttpRequest httpRequest(rawRequest);
-    EXPECT_TRUE(httpRequest.IsValid());
-    EXPECT_FALSE(httpRequest.IsEmpty());
-}
-
-TEST_F(HttpRequestTest, IsEmpty_False_InvalidRequest) {
-    const char* rawRequest ="PUT /test/uri\r\n";
-    
-    HttpRequest httpRequest(rawRequest);
-    EXPECT_FALSE(httpRequest.IsValid());
-    EXPECT_FALSE(httpRequest.IsEmpty());
 }

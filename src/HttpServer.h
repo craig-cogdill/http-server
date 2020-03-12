@@ -1,9 +1,7 @@
 #pragma once
 #include <string>
 #include <memory>
-#include <unistd.h>
 #include <netinet/in.h>
-#include <iostream>
 #include <unordered_map>
 #include "HttpRequest.h"
 
@@ -17,14 +15,9 @@ public:
     void ProcessRequest();
 
 protected:
-    HttpServer():
-        mSocketFd(-1),
-        mSocketAddr{},
-        kPortNumber(8000),
-        mCRLF("\r\n") {
-    };
+    HttpServer();
 
-    virtual bool InitializeSocket();
+    bool InitializeSocket();
     std::string HandleRequestAndGenerateResponse(HttpRequest& request);
     std::string HandleGetRequest(const std::string& uri);
     std::string HandleDeleteRequest(const std::string& uri);

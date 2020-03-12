@@ -1,7 +1,6 @@
 #include "HttpRequest.h"
 #include <sstream>
 #include <algorithm>
-#include <iostream>
 #include <stdio.h>
 #include <string.h>
 #include <cstring>
@@ -19,22 +18,17 @@ HttpRequest::HttpRequest(const char* rawRequest):
     kBadRequestReturnValue(404),
     mContentTypeKey("Content-Type"),
     mContentLengthKey("Content-Length"),
-    mHeaderDelimiter(": "),
-    mEmpty(true) {
-    //std::cout << "Inside constructor" << std::endl;
+    mHeaderDelimiter(": ") {
     if (nullptr != rawRequest && rawRequest[0] != '\0') {
-        //std::cout << "Setting empty false" << std::endl;
-        mEmpty = false;
         std::vector<std::string> requestLines = GetLinesOfRawRequestAndCacheData(rawRequest);
         if (!requestLines.empty()) {
-            std::string firstLine = requestLines.at(0);
+            std::string firstLine(requestLines.at(0));
             requestLines.erase(requestLines.begin());
             mValid = CacheFirstLineRequestArgs(firstLine)
                 && !RequestHasDataErrors(GetVerb(), GetData())
                 && CacheHeaders(requestLines);
         }
     }
-    //std::cout << "Leaving constructor" << std::endl;
 }
 
 HttpRequest::HttpRequest():
@@ -50,17 +44,16 @@ HttpRequest::HttpRequest():
     kBadRequestReturnValue(404),
     mContentTypeKey("Content-Type"),
     mContentLengthKey("Content-Length"),
-    mHeaderDelimiter(": "),
-    mEmpty(true) {
+    mHeaderDelimiter(": ") {
 }
 
 bool HttpRequest::IsValid() {
     return mValid;
 }    
 
-bool HttpRequest::IsEmpty() {
-    return mEmpty;
-}
+int HttpRequest::GetBadRequestReturnCode() {
+    return kBadRequestReturnValue;
+}    
 
 std::string HttpRequest::GetVerb() {
     return mVerb;
@@ -80,10 +73,6 @@ std::string HttpRequest::GetContentLength() {
 
 std::string HttpRequest::GetContentType() {
     return mContentType;
-}
-    
-int HttpRequest::GetBadRequestReturnCode() {
-    return kBadRequestReturnValue;
 }
     
 std::vector<std::string> HttpRequest::Explode(std::string& s, char delim) {
@@ -112,26 +101,20 @@ std::vector<std::string> HttpRequest::GetLinesOfRawRequestAndCacheData(const cha
     int charsSinceLastCR(0);
     int startNewWordAt(0);
     std::vector<std::string> requestLines;
-    //int wordnumber(0);
     for (size_t i = 0; i < strlen(rawRequest); i++) {
         if (rawRequest[i] == '\r') {
             // Detect a double CRLF and save the rest of the string to the data field
             if (charsSinceLastCR == 1) {
-                //std::cout << "HERE STARTS THE DOUBLE CRLF" << std::endl;
-                //std::cout << "DATA FIELD:" << std::endl;
                 int dataStartIdx = i + 2;
                 mRequestData = std::string(&rawRequest[dataStartIdx], strlen(rawRequest)-dataStartIdx);
-                //std::cout << mRequestData << std::endl;
                 break;
             } else {
                 charsSinceLastCR = 0;
                 if (i+1 != strlen(rawRequest)) {
                     if (rawRequest[i+1] == '\n') {
-                        //std::cout << "Found one: " << i << std::endl;
                         std::string line(&rawRequest[startNewWordAt], i-startNewWordAt);
                         requestLines.push_back(line);
                         startNewWordAt = i+2;
-                        //std::cout << "**" << line << "**" << std::endl;
                         continue;
                     }
                 }
@@ -145,7 +128,6 @@ std::vector<std::string> HttpRequest::GetLinesOfRawRequestAndCacheData(const cha
 bool HttpRequest::CacheFirstLineRequestArgs(std::string firstLine) {
     std::vector<std::string> firstLineArgs = Explode(firstLine, ' ');
     if (3 != firstLineArgs.size()) {
-        std::cout << "Invalid first line args: " << firstLineArgs.size() << std::endl;
         kBadRequestReturnValue = 400;
         return false;        
     }
@@ -157,10 +139,8 @@ bool HttpRequest::CacheFirstLineRequestArgs(std::string firstLine) {
     }
     
     // Verify verb
-    std::string verb = firstLineArgs.at(0);
-    std::cout << verb << std::endl;
+    std::string verb(firstLineArgs.at(0));
     if (std::find(mValidVerbs.begin(), mValidVerbs.end(), verb) == mValidVerbs.end()) {
-        std::cout << "Invalid verb: " << verb << std::endl;
         kBadRequestReturnValue = 405;
         return false;
     }
@@ -180,8 +160,8 @@ bool HttpRequest::CacheHeaders(std::vector<std::string> headers) {
                 return false;
             }
             // Store desired headers, ignore the rest
-            std::string headerKey = header.substr(0, delimIdx);
-            std::string headerVal = header.substr(delimIdx+2, header.length());
+            std::string headerKey(header.substr(0, delimIdx));
+            std::string headerVal(header.substr(delimIdx+2, header.length()));
             if (headerKey == mContentTypeKey) {
                 mContentType = headerVal;
             } else if (headerKey == mContentLengthKey) {
@@ -194,15 +174,15 @@ bool HttpRequest::CacheHeaders(std::vector<std::string> headers) {
     
 bool HttpRequest::RequestHasDataErrors(const std::string& verb, const std::string& requestData) {
     if ("GET" == verb && !requestData.empty()) {
-    // A GET request can have headers, but no data
+        // A GET request can have headers, but no data
         kBadRequestReturnValue = 400;
         return true;
     } else if ("DELETE" == verb && !requestData.empty()) {
-    // A DELETE request can have no additional headers or data
+        // A DELETE request can have no additional headers or data
         kBadRequestReturnValue = 400;
         return true;
     } else if ("POST" == verb && requestData.empty()) {
-    // A POST request must have data
+        // A POST request must have data
         kBadRequestReturnValue = 400;
         return true;
     }

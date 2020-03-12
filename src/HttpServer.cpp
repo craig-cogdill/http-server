@@ -6,6 +6,7 @@
 #include <memory>
 #include <cerrno>
 #include <fcntl.h>
+#include <unistd.h>
 
 std::unique_ptr<HttpServer> HttpServer::Create() {
     std::unique_ptr<HttpServer> httpServerPtr(new HttpServer);
@@ -13,6 +14,13 @@ std::unique_ptr<HttpServer> HttpServer::Create() {
         return nullptr;
     }
     return httpServerPtr;
+}
+
+HttpServer::HttpServer():
+    mSocketFd(-1),
+    mSocketAddr{},
+    kPortNumber(8000),
+    mCRLF("\r\n") {
 }
 
 HttpServer::~HttpServer() { 
@@ -78,59 +86,6 @@ void HttpServer::ProcessRequest() {
     Close(openConnection);
 }
 
-// System call wrappers
-
-int HttpServer::Socket(int domain, int type, int protocol) {
-    return socket(domain, type, protocol);
-}
-    
-int HttpServer::Bind(int sockfd, const struct sockaddr* addr, socklen_t addrlen) {
-    return bind(sockfd, addr, addrlen);
-}
-    
-int HttpServer::Listen(int sockfd, int backlog) {
-    return listen(sockfd, backlog);
-}
-    
-int HttpServer::Fcntl(int fd, int cmd, int val) {
-    return fcntl(fd, cmd, val);
-}
-    
-int HttpServer::Accept(int sockfd, struct sockaddr* addr, socklen_t* addrlen) {
-    return accept(sockfd, addr, addrlen);
-}
-
-ssize_t HttpServer::Read(int fd, void* buf, size_t count) {
-    return read(fd, buf, count);
-}
-    
-ssize_t HttpServer::Write(int fd, const void* buf, size_t count) {
-    return write(fd, buf, count);
-}
-    
-int HttpServer::Close(int fildes) {
-    return close(fildes);
-}
-    
-std::string HttpServer::GetResponseFromError(int errorCode) {
-    std::string responseString("HTTP/1.1 ");
-    switch (errorCode) {
-    case 400:
-        responseString += "400 Bad Request";
-        break;
-    case 404:
-        responseString += "404 Not Found";
-        break;
-    case 405:
-        responseString += "405 Method Not Allowed";
-        break;
-    default:
-        responseString += "500 Internal Server Error";
-        break;
-    }
-    return responseString+mCRLF;
-}
-    
 std::string HttpServer::HandleRequestAndGenerateResponse(HttpRequest& request) {
     std::string response("");
     if (!request.IsValid()) {
@@ -146,7 +101,7 @@ std::string HttpServer::HandleRequestAndGenerateResponse(HttpRequest& request) {
     }
     return response;
 }
-    
+
 std::string HttpServer::HandleGetRequest(const std::string& uri) {
     std::string response("");
     if (mDatabase.find(uri) == mDatabase.end()) {
@@ -194,3 +149,56 @@ std::string HttpServer::HandlePostRequest(HttpRequest& request) {
     mDatabase[request.GetUri()] = dataTuple;
     return std::string("HTTP/1.1 200 OK"+mCRLF);
 }
+    
+std::string HttpServer::GetResponseFromError(int errorCode) {
+    std::string responseString("HTTP/1.1 ");
+    switch (errorCode) {
+    case 400:
+        responseString += "400 Bad Request";
+        break;
+    case 404:
+        responseString += "404 Not Found";
+        break;
+    case 405:
+        responseString += "405 Method Not Allowed";
+        break;
+    default:
+        responseString += "500 Internal Server Error";
+        break;
+    }
+    return responseString+mCRLF;
+}
+    
+// System call wrappers
+
+int HttpServer::Socket(int domain, int type, int protocol) {
+    return socket(domain, type, protocol);
+}
+    
+int HttpServer::Bind(int sockfd, const struct sockaddr* addr, socklen_t addrlen) {
+    return bind(sockfd, addr, addrlen);
+}
+    
+int HttpServer::Listen(int sockfd, int backlog) {
+    return listen(sockfd, backlog);
+}
+    
+int HttpServer::Fcntl(int fd, int cmd, int val) {
+    return fcntl(fd, cmd, val);
+}
+    
+int HttpServer::Accept(int sockfd, struct sockaddr* addr, socklen_t* addrlen) {
+    return accept(sockfd, addr, addrlen);
+}
+
+ssize_t HttpServer::Read(int fd, void* buf, size_t count) {
+    return read(fd, buf, count);
+}
+    
+ssize_t HttpServer::Write(int fd, const void* buf, size_t count) {
+    return write(fd, buf, count);
+}
+    
+int HttpServer::Close(int fildes) {
+    return close(fildes);
+}    

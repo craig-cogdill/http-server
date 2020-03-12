@@ -15,7 +15,7 @@ public:
     MockHttpServer() : HttpServer() {}
     virtual ~MockHttpServer() {}
 
-    bool InitializeSocket() override {
+    bool InitializeSocket() {
         return HttpServer::InitializeSocket();
     }
 

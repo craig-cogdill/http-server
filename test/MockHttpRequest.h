@@ -9,9 +9,10 @@ public:
 
     virtual ~MockHttpRequest() = default;
 
-    // This function declaration is identical to the HttpRequest class.
-    //   It is not virtual by design, since the HttpRequest function is
-    //   called in the HttpRequest constructor.
+    std::vector<std::string> Explode(std::string& str, char delim) {
+        return HttpRequest::Explode(str, delim);
+    }
+
     std::vector<std::string> GetLinesOfRawRequestAndCacheData(const char* rawRequest) {
         return HttpRequest::GetLinesOfRawRequestAndCacheData(rawRequest);
     }

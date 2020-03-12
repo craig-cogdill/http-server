@@ -47,51 +47,6 @@ TEST_F(HttpServerTest, InitializeSocket_FcntlFailed) {
     EXPECT_FALSE(mockHttpServer->InitializeSocket());    
 }
 
-/*TEST_F(HttpServerTest, ReadFromSocket_AcceptHasNoConnections_EAGAIN) {
-    std::unique_ptr<MockHttpServer> mockHttpServer = MockHttpServer::Create();
-    EXPECT_NE(nullptr, mockHttpServer);
-
-    mockHttpServer->mErrnoRetVal = EAGAIN;
-    HttpRequest request = mockHttpServer->ReadFromSocket();
-    EXPECT_FALSE(request.IsValid());
-    EXPECT_TRUE(request.GetVerb().empty());
-}
-
-TEST_F(HttpServerTest, ReadFromSocket_AcceptHasNoConnections_EWOULDBLOCK) {
-    std::unique_ptr<MockHttpServer> mockHttpServer = MockHttpServer::Create();
-    EXPECT_NE(nullptr, mockHttpServer);
-
-    mockHttpServer->mErrnoRetVal = EWOULDBLOCK;
-    HttpRequest request = mockHttpServer->ReadFromSocket();
-    EXPECT_FALSE(request.IsValid());
-    EXPECT_TRUE(request.GetVerb().empty());
-}
-
-TEST_F(HttpServerTest, ReadFromSocket_ReadNothing) {
-    std::unique_ptr<MockHttpServer> mockHttpServer = MockHttpServer::Create();
-    EXPECT_NE(nullptr, mockHttpServer);
-
-    mockHttpServer->mReadRetVal = 0;
-    HttpRequest request = mockHttpServer->ReadFromSocket();
-    EXPECT_FALSE(request.IsValid());
-    EXPECT_TRUE(request.GetVerb().empty());
-}
-
-TEST_F(HttpServerTest, ReadFromSocket_ReadValidRequest) {
-    std::unique_ptr<MockHttpServer> mockHttpServer = MockHttpServer::Create();
-    EXPECT_NE(nullptr, mockHttpServer);
-
-    // Mock out that the call to 'read' returns a valid request
-    std::string validRequest("GET /tmp/uri HTTP/1.1\r\n");
-    mockHttpServer->mSetBufferInRead = true;
-    mockHttpServer->mReadBufferRetVal = validRequest; 
-    mockHttpServer->mReadRetVal = validRequest.size();
-
-    HttpRequest request = mockHttpServer->ReadFromSocket();
-    EXPECT_TRUE(request.IsValid());
-    EXPECT_EQ("GET", request.GetVerb());
-}*/
-
 TEST_F(HttpServerTest, GetResponseFromError_400) {
     std::unique_ptr<MockHttpServer> mockHttpServer = MockHttpServer::Create();
     EXPECT_NE(nullptr, mockHttpServer);
@@ -372,3 +327,48 @@ TEST_F(HttpServerTest, HandleRequestAndGenerateResponse_DELETE_ValidDataDeleted)
     size_t expectedEmptyDbSize(0);
     EXPECT_EQ(expectedEmptyDbSize, mockHttpServer->GetDatabaseSize());
 }
+
+/*TEST_F(HttpServerTest, ReadFromSocket_AcceptHasNoConnections_EAGAIN) {
+    std::unique_ptr<MockHttpServer> mockHttpServer = MockHttpServer::Create();
+    EXPECT_NE(nullptr, mockHttpServer);
+
+    mockHttpServer->mErrnoRetVal = EAGAIN;
+    HttpRequest request = mockHttpServer->ReadFromSocket();
+    EXPECT_FALSE(request.IsValid());
+    EXPECT_TRUE(request.GetVerb().empty());
+}
+
+TEST_F(HttpServerTest, ReadFromSocket_AcceptHasNoConnections_EWOULDBLOCK) {
+    std::unique_ptr<MockHttpServer> mockHttpServer = MockHttpServer::Create();
+    EXPECT_NE(nullptr, mockHttpServer);
+
+    mockHttpServer->mErrnoRetVal = EWOULDBLOCK;
+    HttpRequest request = mockHttpServer->ReadFromSocket();
+    EXPECT_FALSE(request.IsValid());
+    EXPECT_TRUE(request.GetVerb().empty());
+}
+
+TEST_F(HttpServerTest, ReadFromSocket_ReadNothing) {
+    std::unique_ptr<MockHttpServer> mockHttpServer = MockHttpServer::Create();
+    EXPECT_NE(nullptr, mockHttpServer);
+
+    mockHttpServer->mReadRetVal = 0;
+    HttpRequest request = mockHttpServer->ReadFromSocket();
+    EXPECT_FALSE(request.IsValid());
+    EXPECT_TRUE(request.GetVerb().empty());
+}
+
+TEST_F(HttpServerTest, ReadFromSocket_ReadValidRequest) {
+    std::unique_ptr<MockHttpServer> mockHttpServer = MockHttpServer::Create();
+    EXPECT_NE(nullptr, mockHttpServer);
+
+    // Mock out that the call to 'read' returns a valid request
+    std::string validRequest("GET /tmp/uri HTTP/1.1\r\n");
+    mockHttpServer->mSetBufferInRead = true;
+    mockHttpServer->mReadBufferRetVal = validRequest; 
+    mockHttpServer->mReadRetVal = validRequest.size();
+
+    HttpRequest request = mockHttpServer->ReadFromSocket();
+    EXPECT_TRUE(request.IsValid());
+    EXPECT_EQ("GET", request.GetVerb());
+}*/

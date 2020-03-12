@@ -2,7 +2,6 @@
 
 class HttpRequestTest : public ::testing::Test {
 public:
-    HttpRequestTest(): mEmptyRequest("") {};
-    virtual ~HttpRequestTest() = default;
-    std::string mEmptyRequest;
+    HttpRequestTest() = default;
+    virtual ~HttpRequestTest() = default;    
 };
