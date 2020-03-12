@@ -6,9 +6,11 @@
 - CMake >= 3.0 (latest Stable release)
     - https://cmake.org/download/
     - It has only been tested with CMake v3.16.5 for Linux x86_64
-- gcc/g++ with C++11 support
+- g++ with C++11 support
     - Tested with g++ v9.2.1 for Ubuntu
-- Active internet connection (to download googletest v1.7.0)
+- Active internet connection at build time
+    - This is necessary to download googletest v1.7.0. It will not be
+      installed system-wide, only locally.
 
 ## Building and Running:
 cd http-server
@@ -72,22 +74,23 @@ The http-server can be halted with a SIGTERM or a SIGINT signal.
     A true production version of an HTTP server would of course have an actual database behind it's API layer to store data. It just
     seemed like too much for this project.
 
-- The server is not capable of handling data larger than 10MB.
+- The server is not capable of handling request data larger than 10MB.
     - This is clearly not a reasonable assumption for an actual HTTP server. For the sake of this project, it seems an appropriate
       amount of data to cache in memory if we aren't handling more than a few dozen PUT requests. By choosing to do the database
       as a C++ structure, I had to draw the line somewhere. 
 
 ## Coding Principles / Goals:
 - As a good C++ coding practice, no raw pointers, unless unavoidable.
+
 - Don't throw, unless necessary
     - Personally, I find throwing messy, and only had one instance in this code that would require a 'hard stop' on processing.
 
 - Favor verbosity over brevity
     - I think clean code should aim to explain itself, and reserve comments for tricky, unintuitive sections, or to break up longer
       blocks of code.
-    - Be explicit with variable types. Personally, I prefer prefixing every std:: call with 'std::' as a good habit, so
+    - Be explicit with variable types. I prefer prefixing every std:: call with 'std::' as a good habit, so
       that when calls are not coming from the std:: namespace, readers do not have to navigate across files to find out which
-      namespace a function comes from. I know that is not everyones personal preference, especially for std:: specifically.
+      namespace they're in. Just personal preference.
 
 - Maximum code coverage through unit tests
     - Only one function is not unit tested - `HttpServer::ProcessRequest`. This function returns void and relies heavily on system
