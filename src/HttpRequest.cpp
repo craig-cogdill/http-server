@@ -1,35 +1,7 @@
 #include "HttpRequest.h"
 #include <sstream>
 #include <algorithm>
-#include <stdio.h>
-#include <string.h>
 #include <cstring>
-
-HttpRequest::HttpRequest(const char* rawRequest):
-    mVerb(""),
-    mUri(""),
-    mContentType(""),
-    mContentLength(""),
-    mRequestData(""),
-    mCRLF("\r\n"),
-    mValid(false),
-    mValidVerbs({"GET", "POST", "DELETE"}),
-    mValidHttpVersion("HTTP/1.1"),
-    kBadRequestReturnValue(404),
-    mContentTypeKey("Content-Type"),
-    mContentLengthKey("Content-Length"),
-    mHeaderDelimiter(": ") {
-    if (nullptr != rawRequest && rawRequest[0] != '\0') {
-        std::vector<std::string> requestLines = GetLinesOfRawRequestAndCacheData(rawRequest);
-        if (!requestLines.empty()) {
-            std::string firstLine(requestLines.at(0));
-            requestLines.erase(requestLines.begin());
-            mValid = CacheFirstLineRequestArgs(firstLine)
-                && !RequestHasDataErrors(GetVerb(), GetData())
-                && CacheHeaders(requestLines);
-        }
-    }
-}
 
 HttpRequest::HttpRequest():
     mVerb(""),
@@ -45,6 +17,19 @@ HttpRequest::HttpRequest():
     mContentTypeKey("Content-Type"),
     mContentLengthKey("Content-Length"),
     mHeaderDelimiter(": ") {
+}
+
+HttpRequest::HttpRequest(const char* rawRequest): HttpRequest() {
+    if (nullptr != rawRequest && rawRequest[0] != '\0') {
+        std::vector<std::string> requestLines = GetLinesOfRawRequestAndCacheData(rawRequest);
+        if (!requestLines.empty()) {
+            std::string firstLine(requestLines.at(0));
+            requestLines.erase(requestLines.begin());
+            mValid = CacheFirstLineRequestArgs(firstLine)
+                && !RequestHasDataErrors(GetVerb(), GetData())
+                && CacheHeaders(requestLines);
+        }
+    }
 }
 
 bool HttpRequest::IsValid() {

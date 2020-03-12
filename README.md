@@ -2,7 +2,10 @@
 
 
 TODO:
-- Check code for uniform std::string() operators versus {}
+- Investigate the newline printed in POST/GET
+- Make the Accept call blocking
+- Remove all mocked system calls, or unit test ProcessRequest
+- Remove the sleep from the while loop
 - Check all code for places where const or pass-by-reference could be used
 - Remove virtual functionality from functions that do not need it in MockHttpServer and MockHttpRequest
 - Flesh out the README
@@ -18,6 +21,7 @@ Design Decisions:
 - Show what I know
     - Have not used GMock, so instead used a handmade inheritance Mock model for unit testing
     - Built for Linux which is what I have programmed for before (and only have access to at home)
+- Socket is non-blocking, so that the program can be interrupted. Otherwise, calls to Accept() would effectively starve main until the next connection is accepted
 
 Coding Goals:
 - No raw pointers, unless unavoidable

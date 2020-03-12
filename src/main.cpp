@@ -3,7 +3,6 @@
 #include <thread>
 #include <chrono>
 #include "HttpServer.h"
-#include "HttpRequest.h"
 
 namespace {
    volatile sig_atomic_t gContinueRunning(0);
