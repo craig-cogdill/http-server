@@ -13,17 +13,23 @@
       installed system-wide, only locally.
 
 ## Building and Running:
+```
 cd http-server
 cmake .
 make
+```
 
 This will generate two executable artifacts: ./http-server and ./unit-test-runner
 
 ### Running the Unit Test Suite:
+```
 ./unit-test-runner
+```
 
 ### Running the http-server program:
+```
 ./http-server
+```
 
 The http-server is listening for connections on port 8000, and will not print to the terminal.
 The http-server can be halted with a SIGTERM or a SIGINT signal.
