@@ -6,6 +6,7 @@
 #include <memory>
 #include <cerrno>
 #include <fcntl.h>
+#include <unistd.h>
 
 std::unique_ptr<HttpServer> HttpServer::Create() {
     std::unique_ptr<HttpServer> httpServerPtr(new HttpServer);
@@ -15,6 +16,14 @@ std::unique_ptr<HttpServer> HttpServer::Create() {
     return httpServerPtr;
 }
 
+HttpServer::HttpServer():
+    mSocketFd(-1),
+    mSocketAddr{},
+    kPortNumber(8000),
+    mCRLF("\r\n"),
+    kMaxBufferSize(1250000) { // 10MB transfers
+}
+
 HttpServer::~HttpServer() { 
     if (mSocketFd > 0) {
         close(mSocketFd);
@@ -22,7 +31,7 @@ HttpServer::~HttpServer() {
 }
 
 bool HttpServer::InitializeSocket() {
-    if ((mSocketFd = Socket(AF_INET, SOCK_STREAM, 0)) == 0) {
+    if (0 == (mSocketFd = Socket(AF_INET, SOCK_STREAM, 0))) {
         std::cerr << "Failed to initialize socket" << std::endl;
         return false;
     }
@@ -48,31 +57,119 @@ bool HttpServer::InitializeSocket() {
     return true;
 }
 
-std::string HttpServer::ReadFromSocket() {
-    std::string toReturn{""};
-
+void HttpServer::ProcessRequest() {
+    char buffer[kMaxBufferSize] = {0};
+    long bytesRead(0);
     socklen_t socketAddrLen = sizeof(mSocketAddr);
-    int newSocket = Accept(mSocketFd, reinterpret_cast<sockaddr*>(&mSocketAddr), &socketAddrLen);
+    int openConnection = Accept(mSocketFd, reinterpret_cast<sockaddr*>(&mSocketAddr), &socketAddrLen);
 
     // errno will be set to EAGAIN or EWOULDBLOCK if there are no pending
     //      socket connections. Both must be checked for portability.
-    if (!(errno == EAGAIN || errno == EWOULDBLOCK)) {
-        if (newSocket < 0) {
-            std::cerr << "Error reading from socket: " << newSocket << std::endl;
-            close(newSocket);
-            exit(EXIT_FAILURE);
+    if (!(EAGAIN == errno || EWOULDBLOCK == errno)) {
+        if (openConnection < 0) {
+            std::cerr << "Error reading from socket ("
+                      << openConnection << "): Cannot continue" <<  std::endl;
+            Close(openConnection);
+            exit(-1);
         } else {
-            char buffer[30000] = {0};
-            long valread = read(newSocket, buffer, 30000);
-            if (valread > 0) {
-                toReturn = std::string(&buffer[0], valread);
+            bytesRead = Read(openConnection, buffer, 30000);
+            if (0 == bytesRead) {
+                std::cerr << "HTTP Server received an unexpectedly empty message." << std::endl;
+            } else {
+                HttpRequest request(&buffer[0]);
+                std::string response = HandleRequestAndGenerateResponse(request);
+                ssize_t bytesWritten = Write(openConnection, response.c_str(), strlen(response.c_str()));
+                if (bytesWritten <= 0) {
+                    std::cerr << "Failed to send response to client" << std::endl;
+                }
             }
         }
     }
-    close(newSocket);
-    return toReturn;
+    Close(openConnection);
 }
 
+std::string HttpServer::HandleRequestAndGenerateResponse(HttpRequest& request) {
+    std::string response("");
+    if (!request.IsValid()) {
+        response = GetResponseFromError(request.GetBadRequestReturnCode());
+    } else {
+        if ("GET" == request.GetVerb()) { 
+            response = HandleGetRequest(request.GetUri());
+        } else if ("POST" == request.GetVerb()) {
+            response = HandlePostRequest(request);
+        } else if ("DELETE" == request.GetVerb()) {
+            response = HandleDeleteRequest(request.GetUri());
+        }
+    }
+    return response;
+}
+
+std::string HttpServer::HandleGetRequest(const std::string& uri) {
+    std::string response("");
+    if (mDatabase.find(uri) == mDatabase.end()) {
+        response = GetResponseFromError(404);
+    } else {
+        DataTuple dataTuple = mDatabase.at(uri);
+
+        // This is the only point in the server where headers and data
+        //   need to be returned, so their construction is built into
+        //   this function, rather than being in its own function
+        response += "HTTP/1.1 200 OK"+mCRLF;
+        std::string contentType = std::get<0>(dataTuple);
+        std::string contentLength = std::get<1>(dataTuple);
+        std::string data = std::get<2>(dataTuple);
+        bool anyHeaderPresent(false);
+        if (!contentType.empty()) {
+            response += "Content-Type: "+contentType+mCRLF;
+            anyHeaderPresent = true;
+        }
+        if (!contentLength.empty()) {
+            response += "Content-Length: "+contentLength+mCRLF;
+            anyHeaderPresent = true;
+        }
+        response += anyHeaderPresent? mCRLF : mCRLF+mCRLF;
+        response += data+mCRLF;
+    }
+    return response;    
+}
+
+std::string HttpServer::HandleDeleteRequest(const std::string& uri) {
+    std::string response("");
+    auto dbEntryItr = mDatabase.find(uri);
+    if (mDatabase.end() == dbEntryItr) {
+        response = GetResponseFromError(404);
+    } else {
+        mDatabase.erase(dbEntryItr);
+        response = "HTTP/1.1 200 OK"+mCRLF;
+    }
+    return response;    
+}
+    
+std::string HttpServer::HandlePostRequest(HttpRequest& request) {
+    DataTuple dataTuple = std::make_tuple(request.GetContentType(), request.GetContentLength(), request.GetData());
+    mDatabase[request.GetUri()] = dataTuple;
+    return std::string("HTTP/1.1 200 OK"+mCRLF);
+}
+    
+std::string HttpServer::GetResponseFromError(int errorCode) {
+    std::string responseString("HTTP/1.1 ");
+    switch (errorCode) {
+    case 400:
+        responseString += "400 Bad Request";
+        break;
+    case 404:
+        responseString += "404 Not Found";
+        break;
+    case 405:
+        responseString += "405 Method Not Allowed";
+        break;
+    default:
+        responseString += "500 Internal Server Error";
+        break;
+    }
+    return responseString+mCRLF;
+}
+    
 // System call wrappers
 
 int HttpServer::Socket(int domain, int type, int protocol) {
@@ -98,3 +195,11 @@ int HttpServer::Accept(int sockfd, struct sockaddr* addr, socklen_t* addrlen) {
 ssize_t HttpServer::Read(int fd, void* buf, size_t count) {
     return read(fd, buf, count);
 }
+    
+ssize_t HttpServer::Write(int fd, const void* buf, size_t count) {
+    return write(fd, buf, count);
+}
+    
+int HttpServer::Close(int fildes) {
+    return close(fildes);
+}    
